@@ -3,22 +3,27 @@ class JNumber:
         self.n = _n
     def pp(self):
         return str(self.n)
+    def interp(self):
+        return self.n
 
 class JPlus:
     def __init__(self, l, r):
-        self.left = l
-        self.right = r
+        self.l = l
+        self.r = r
     def pp(self):
-        return "( " + self.l.pp() + " + " self.r.pp() + " )"
+        return "( " + self.l.pp() + " + " + self.r.pp() + " )"
+    def interp(self):
+        return self.l.interp() + self.r.interp()
 
 class JMult:
     def __init__(self, l, r):
-        self.left = l
-        self.right = r
+        self.l = l
+        self.r = r
     def pp(self):
-        return "( " + self.l.pp() + " * " self.r.pp() + " )"
-        
-#step 3: j0 test suite
+        return "( " + self.l.pp() + " * " + self.r.pp() + " )"
+    def interp(self):
+        return self.l.interp() * self.r.interp()
+
 
 test_values = [
     JPlus(JNumber(6), JMult(JNumber(4), JNumber(3))), #18
@@ -34,3 +39,6 @@ test_values = [
     JPlus(JMult(JNumber(4), JNumber(3)), JNumber(13)), #25
     JMult(JPlus(JNumber(3), JNumber(9)), JNumber(12)) #144
 ]
+
+for value in test_values:
+    print(value.interp())
