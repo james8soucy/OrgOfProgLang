@@ -24,6 +24,11 @@ class JMult:
     def interp(self):
         return self.l.interp() * self.r.interp()
 
+class Sexpr:
+    def __init__(self, l, r):
+        self.l = l
+        self.r = r
+
 
 test_values = [
     JPlus(JNumber(6), JMult(JNumber(4), JNumber(3))), #18
