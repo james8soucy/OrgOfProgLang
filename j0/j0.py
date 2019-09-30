@@ -24,14 +24,23 @@ class JMult:
     def interp(self):
         return self.l.interp() * self.r.interp()
 
-class Sexpr:
+class SeStr:
+    def __init__(self, s):
+        self.s = s
+class SeNum:
+    def __init__(self, n):
+        self.n = n
+class SeMt:
+    def __init__(self, n):
+        pass
+class SeCons:
     def __init__(self, l, r):
         self.l = l
         self.r = r
 
 
 test_values = [
-    JPlus(JNumber(6), JMult(JNumber(4), JNumber(3))), #18
+    Sexpr('+', Sexpr('6', Sexpr('*', Sexpr('4', Sexpr('3', None))))), #18    
     JMult(JPlus(JNumber(9), JNumber(8)), JPlus(JNumber(2), JPlus(JNumber(3), JNumber(4)))), #153
     JPlus(JNumber(4), JPlus(JNumber(4), JNumber(9))), #17
     JMult(JPlus(JNumber(9), JNumber(4)), JNumber(11)), #143
@@ -45,5 +54,8 @@ test_values = [
     JMult(JPlus(JNumber(3), JNumber(9)), JNumber(12)) #144
 ]
 
-for value in test_values:
-    print(value.interp())
+# for value in test_values:
+    # print(value.interp())
+    
+
+print(Sexpr('*', Sexpr(Sexpr('+', Sexpr('9', Sexpr('8', None))), Sexpr('+', Sexpr('2', Sexpr('+', Sexpr('3', Sexpr('4', None))))))).pp())
