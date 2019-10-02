@@ -30,32 +30,30 @@ class SeStr:
 class SeNum:
     def __init__(self, n):
         self.n = n
-class SeMt:
-    def __init__(self, n):
+class SeEmp:
+    def __init__(self):
         pass
 class SeCons:
     def __init__(self, l, r):
         self.l = l
         self.r = r
-
-
+        
 test_values = [
-    Sexpr('+', Sexpr('6', Sexpr('*', Sexpr('4', Sexpr('3', None))))), #18    
-    JMult(JPlus(JNumber(9), JNumber(8)), JPlus(JNumber(2), JPlus(JNumber(3), JNumber(4)))), #153
-    JPlus(JNumber(4), JPlus(JNumber(4), JNumber(9))), #17
-    JMult(JPlus(JNumber(9), JNumber(4)), JNumber(11)), #143
-    JNumber(9), #9
-    JPlus(JNumber(4), JNumber(9)), #13 
-    JMult(JMult(JNumber(5), JNumber(9)), JMult(JNumber(3), JNumber(11))), #1485 
-    JPlus(JMult(JNumber(3), JNumber(9)), JNumber(2)), #29
-    JMult(JMult(JNumber(4), JNumber(2)), JNumber(8)), #64 
-    JPlus(JNumber(3), JMult(JNumber(5), JNumber(8))), #43
-    JPlus(JMult(JNumber(4), JNumber(3)), JNumber(13)), #25
-    JMult(JPlus(JNumber(3), JNumber(9)), JNumber(12)) #144
-]
+    SeCons(SeStr('+'), SeCons(SeNum(6), SeCons(SeCons(SeStr('*'), SeCons(SeNum(4), SeCons(SeNum(3), SeEmp()))), SeEmp()))),
+    SeCons(SeStr('*'), SeCons(SeCons(SeStr('+'), SeCons(SeNum(9), SeCons(SeNum(8), SeEmp()))), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeNum(4), SeEmp()))), SeEmp()))), SeEmp()))),
+    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeNum(9), SeEmp()))), SeEmp()))),
+    SeCons(SeStr('*'), SeCons(SeCons(SeStr('+'), SeCons(SeNum(9), SeCons(SeNum(4), SeEmp()))), SeCons(SeNum(11), SeEmp()))),
+    SeNum(9),
+    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeNum(9), SeEmp()))),
+    SeCons(SeStr('*'), SeCons(SeCons(SeStr('*'), SeCons(SeNum(5), SeCons(SeNum(9), SeEmp()))), SeCons(SeCons(SeStr('*'), SeCons(SeNum(3), SeCons(SeNum(11), SeEmp()))), SeEmp()))),
+    SeCons(SeStr('+'), SeCons(SeCons(SeStr('*'), SeCons(SeNum(3), SeCons(SeNum(9), SeEmp()))), SeCons(SeNum(2), SeEmp()))),
+    SeCons(SeStr('*'), SeCons(SeCons(SeStr('*'), SeCons(SeNum(4), SeCons(SeNum(2), SeEmp()))), SeCons(SeNum(8), SeEmp()))),
+    SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('*'), SeCons(SeNum(5), SeCons(SeNum(8), SeEmp()))), SeEmp()))),
+    SeCons(SeStr('+'), SeCons(SeCons(SeStr('*'), SeCons(SeNum(4), SeCons(SeNum(3), SeEmp()))), SeCons(SeNum(13), SeEmp()))),
+    SeCons(SeStr('*'), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeNum(9), SeEmp()))), SeCons(SeNum(12), SeEmp())))
+]  
 
-# for value in test_values:
-    # print(value.interp())
+for value in test_values:
+    print((value).interp())
     
 
-print(Sexpr('*', Sexpr(Sexpr('+', Sexpr('9', Sexpr('8', None))), Sexpr('+', Sexpr('2', Sexpr('+', Sexpr('3', Sexpr('4', None))))))).pp())
