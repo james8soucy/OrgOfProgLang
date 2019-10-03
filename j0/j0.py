@@ -81,5 +81,4 @@ test_values = [
 
 for index, value in enumerate(test_values):
     print(desugar(value).interp(), expected[index])
-    
 
