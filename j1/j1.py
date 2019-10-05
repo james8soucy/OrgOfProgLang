@@ -56,6 +56,18 @@ class SeCons:
     def __init__(self, l, r):
         self.l = l
         self.r = r
+        
+def desugar(sexpr):
+    # e = v
+    if isinstance(sexpr, SeNum):
+        return JNumber(SeNum.n)
+    # e = (e e ...)
+    if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and isinstance(sexpr.r, SeCons) and isinstance(sexpr.r.r, SeCons) and isinstance(sexpr.r.r.r, SeEmp):
+        return JApp(JPrim(sexpr.l.s), JCons(desugar(sexpr.r.l), JCons(desugar(sexpr.r.r.l), JEmp())))
+    # e = (if e e e)
+    if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == 'if'  and isinstance(sexpr.r, SeCons)  and isinstance(sexpr.r.r, SeCons)  and isinstance(sexpr.r.r.r, SeCons) and isinstance(sexpr.r.r.r.r, SeEmp):
+        return JIf(desugar(sexpr.r.l), desugar(sexpr.r.r.l), desugar(sexpr.r.r.r.l))
+    return 'case error'
 
 def SApp(op, l, r):
     return SeCons(op, SeCons(l, SeCons(r, SeEmp())))
