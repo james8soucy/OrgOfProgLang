@@ -5,42 +5,42 @@
 class JNumber:
     def __init__(self, n):
         self.n = n
-    def pp():
-        return str(n)
+    def pp(self):
+        return str(self.n)
 class JEmp:
     def __init__(self):
         pass
-    def pp():
+    def pp(self):
         return "{}"
 class JCons:
     def __init__(self, l, r):
         self.l = l
         self.r = r
-    def pp():
+    def pp(self):
         return "(" + self.l.pp() + ", " + self.r.pp() + ")"
 class JIf:
     def __init__(self, cond, tn, fn):
         self.cond = cond
         self.tn = tn
         self.fn = fn
-    def pp():
-        return "(if " + cond.pp() + ", " + tn.pp() + ", " + fn.pp() + ")"
+    def pp(self):
+        return "(if " + self.cond.pp() + ", " + self.tn.pp() + ", " + self.fn.pp() + ")"
 class JBool:
     def __init__(self, b):
         self.b = b
-    def pp():
-        return str(b)
+    def pp(self):
+        return str(self.b)
 class JPrim:
     def __init__(self, p):
         self.p = p
-    def pp():
-        return str(p)
+    def pp(self):
+        return str(self.p)
     
 class JApp:
     def __init__(self, func, args):
         self.func = func
         self.args = args
-    def pp():
+    def pp(self):
         return "(fn " + self.func.pp() + ", " + self.args.pp() + ")"
         
 class SeStr:
@@ -60,7 +60,7 @@ class SeCons:
 def desugar(sexpr):
     # e = v
     if isinstance(sexpr, SeNum):
-        return JNumber(SeNum.n)
+        return JNumber(sexpr.n)
     # e = (e e ...)
     if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and isinstance(sexpr.r, SeCons) and isinstance(sexpr.r.r, SeCons) and isinstance(sexpr.r.r.r, SeEmp):
         return JApp(JPrim(sexpr.l.s), JCons(desugar(sexpr.r.l), JCons(desugar(sexpr.r.r.l), JEmp())))
@@ -93,4 +93,4 @@ test_values = [
 ]  
 
 for index, value in enumerate(test_values):
-    print(desugar(value).interp(), expected[index])  
+    print(desugar(value).pp())  
