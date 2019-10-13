@@ -7,17 +7,23 @@ class JNumber:
         self.n = n
     def pp(self):
         return str(self.n)
+    def interp(self):
+        return self
 class JEmp:
     def __init__(self):
         pass
     def pp(self):
         return "{}"
+    def interp(self):
+        return self
 class JCons:
     def __init__(self, l, r):
         self.l = l
         self.r = r
     def pp(self):
         return "(" + self.l.pp() + ", " + self.r.pp() + ")"
+    def interp(self):
+        return JCons(self.l.interp(), self.r.interp())
 class JIf:
     def __init__(self, cond, tn, fn):
         self.cond = cond
@@ -25,24 +31,57 @@ class JIf:
         self.fn = fn
     def pp(self):
         return "(if " + self.cond.pp() + ", " + self.tn.pp() + ", " + self.fn.pp() + ")"
+    def interp(self):
+        _cond = self.cond.interp()
+        if (_cond.b):
+            return self.tn.interp()
+        else:
+            return self.fn.interp()
 class JBool:
     def __init__(self, b):
         self.b = b
     def pp(self):
         return str(self.b)
+    def interp(self):
+        return self
 class JPrim:
     def __init__(self, p):
         self.p = p
     def pp(self):
         return str(self.p)
-    
+    def interp(self):
+        return self
 class JApp:
     def __init__(self, func, args):
         self.func = func
         self.args = args
     def pp(self):
         return "(fn " + self.func.pp() + ", " + self.args.pp() + ")"
-        
+    def interp(self):
+        _func = self.func.interp().p
+        _args = [self.args.interp().l.n, self.args.interp().r.l.n]
+        if (_func == '+'):
+            return JNumber(_args[0] + _args[1])
+        if (_func == '*'):
+            return JNumber(_args[0] * _args[1])
+        if (_func == '-'):
+            if(isinstance(_args[1]), JEmp):
+                return JNumber(-1 * _args[1])
+            return JNumber(_args[0] - _args[1])
+        if (_func == '/'):
+            return JNumber(_args[0] / _args[1])
+        if (_func == '<'):
+            return JBool(_args[0] < _args[1])
+        if (_func == '>'):
+            return JBool(_args[0] > _args[1])
+        if (_func == '=='):
+            return JBool(_args[0] == _args[1])
+        if (_func == '<='):
+            return JBool(_args[0] <= _args[1])
+        if (_func == '>='):
+            return JBool(_args[0] >= _args[1])
+        if (_func == '!='):
+            return JBool(_args[0] != _args[1])
 class SeStr:
     def __init__(self, s):
         self.s = s
@@ -90,7 +129,7 @@ test_values = [
     SApp(SeStr('>='), SeNum(7), SeNum(16)),
     SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
     SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
-]  
+]
 
 for index, value in enumerate(test_values):
-    print(desugar(value).pp())  
+    print(desugar(value).pp(), desugar(value).interp().pp())  
