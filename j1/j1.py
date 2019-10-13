@@ -65,7 +65,7 @@ class JApp:
         if (_func == '*'):
             return JNumber(_args[0] * _args[1])
         if (_func == '-'):
-            if(isinstance(_args[1]), JEmp):
+            if(isinstance(_args[1], JEmp)):
                 return JNumber(-1 * _args[1])
             return JNumber(_args[0] - _args[1])
         if (_func == '/'):
@@ -95,17 +95,33 @@ class SeCons:
     def __init__(self, l, r):
         self.l = l
         self.r = r
-        
+
+class CHole:
+    def __init__(self):
+        pass
+
 def desugar(sexpr):
     # e = v
     if isinstance(sexpr, SeNum):
         return JNumber(sexpr.n)
+    # e = (+ e e)
+    if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == '+' and isinstance(sexpr.r, SeCons)):
+        return JApp(JPrim(sexpr.l.s), JCons(desugar(sexpr.r.l), JCons(desugar(SeCons(SeStr('+'), sexpr.r.r)), JEmp())))
+    # e = (* e e)
+    if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == '*' and isinstance(sexpr.r, SeCons)):
+        return JApp(JPrim(sexpr.l.s), JCons(desugar(sexpr.r.l), JCons(desugar(SeCons(SeStr('*'), sexpr.r.r)), JEmp())))
     # e = (e e ...)
     if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and isinstance(sexpr.r, SeCons) and isinstance(sexpr.r.r, SeCons) and isinstance(sexpr.r.r.r, SeEmp):
         return JApp(JPrim(sexpr.l.s), JCons(desugar(sexpr.r.l), JCons(desugar(sexpr.r.r.l), JEmp())))
     # e = (if e e e)
     if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == 'if'  and isinstance(sexpr.r, SeCons)  and isinstance(sexpr.r.r, SeCons)  and isinstance(sexpr.r.r.r, SeCons) and isinstance(sexpr.r.r.r.r, SeEmp):
         return JIf(desugar(sexpr.r.l), desugar(sexpr.r.r.l), desugar(sexpr.r.r.r.l))
+    # e = (+)
+    if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == '+' and isinstance(sexpr.r, SeEmp)):
+        return JNumber(0)
+    # e = (*)
+    if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == '*' and isinstance(sexpr.r, SeEmp)):
+        return JNumber(1)
     return 'case error'
 
 def SApp(op, l, r):
@@ -114,11 +130,14 @@ def SApp(op, l, r):
 def SIf(cond, tn, fn):
     return SeCons(SeStr('if'), SeCons(cond, SeCons(tn, SeCons(fn, SeEmp()))))
     
-expected = [54, 12, 24, 3, 2, JBool(False), JBool(False), JBool(False), JBool(True), JBool(False), 3, 4]
+expected = [54, 12, 3, 24, 3, 2, JBool(False), JBool(False), JBool(False), JBool(True), JBool(False), 3, 4]
 
 test_values = [    
     SeNum(54),
+    SeCons(SeStr('+'), SeEmp()),
+    SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
     SApp(SeStr('+'), SeNum(4), SeNum(8)),
+    SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
     SApp(SeStr('*'), SeNum(4), SeNum(6)),
     SApp(SeStr('/'), SeNum(9), SeNum(3)),
     SApp(SeStr('-'), SeNum(13), SeNum(11)),
