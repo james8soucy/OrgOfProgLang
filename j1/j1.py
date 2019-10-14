@@ -124,18 +124,6 @@ class Cif0:
         self.e2 = e2
     def plug(self, cond):
         return JIf(cond, self.e1, self.e2)
-class Cif1:
-    def __init__(self, e0, e2):
-        self.e0 = e0
-        self.e2 = e2
-    def plug(self, tn):
-        return JIf(self.e0, tn, self.e2)
-class Cif2:
-    def __init__(self, e0, e1):
-        self.e0 = e0
-        self.e1 = e1
-    def plug(self, fn):
-        return JIf(self.e0, self.e1, fn)
 class CApp:
     def __init__(self, func, args):
         self.func = func
