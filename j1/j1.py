@@ -62,35 +62,39 @@ class JApp:
         retstr = retstr + "])"
         return retstr
     def interp(self):
-        _func = self.func.interp().p
-        if (_func == '+'):
-            sum = 0
-            for arg in self.args:
-                sum = sum + arg.interp().n
-            return JNumber(sum)
-        if (_func == '*'):
-            prd = 1
-            for arg in self.args:
-                prd = prd * arg.interp().n
-            return JNumber(prd)
-        if (_func == '-'):
-            if(len(self.args) == 1):
-                return JNumber(-1 * self.args[1].interp().n)
-            return JNumber(self.args[0].interp().n - self.args[1].interp().n)
-        if (_func == '/'):
-            return JNumber(self.args[0].interp().n / self.args[1].interp().n)
-        if (_func == '<'):
-            return JBool(self.args[0].interp().n < self.args[1].interp().n)
-        if (_func == '>'):
-            return JBool(self.args[0].interp().n > self.args[1].interp().n)
-        if (_func == '=='):
-            return JBool(self.args[0].interp().n == self.args[1].interp().n)
-        if (_func == '<='):
-            return JBool(self.args[0].interp().n <= self.args[1].interp().n)
-        if (_func == '>='):
-            return JBool(self.args[0].interp().n >= self.args[1].interp().n)
-        if (_func == '!='):
-            return JBool(self.args[0].interp().n != self.args[1].interp().n)
+        return delta(self)
+
+def delta(JA):
+    _func = JA.func.interp().p
+    if (_func == '+'):
+        sum = 0
+        for arg in JA.args:
+            sum = sum + arg.interp().n
+        return JNumber(sum)
+    if (_func == '*'):
+        prd = 1
+        for arg in JA.args:
+            prd = prd * arg.interp().n
+        return JNumber(prd)
+    if (_func == '-'):
+        if(len(JA.args) == 1):
+            return JNumber(-1 * JA.args[1].interp().n)
+        return JNumber(JA.args[0].interp().n - JA.args[1].interp().n)
+    if (_func == '/'):
+        return JNumber(JA.args[0].interp().n / JA.args[1].interp().n)
+    if (_func == '<'):
+        return JBool(JA.args[0].interp().n < JA.args[1].interp().n)
+    if (_func == '>'):
+        return JBool(JA.args[0].interp().n > JA.args[1].interp().n)
+    if (_func == '=='):
+        return JBool(JA.args[0].interp().n == JA.args[1].interp().n)
+    if (_func == '<='):
+        return JBool(JA.args[0].interp().n <= JA.args[1].interp().n)
+    if (_func == '>='):
+        return JBool(JA.args[0].interp().n >= JA.args[1].interp().n)
+    if (_func == '!='):
+        return JBool(JA.args[0].interp().n != JA.args[1].interp().n)
+
 class SeStr:
     def __init__(self, s):
         self.s = s
@@ -111,6 +115,9 @@ class CHole:
         self.h = None
     def plug(self, p):
         return p
+    def pp(self):
+        #for testing purposes
+        return 'HOLE'
 class Cif0:
     def __init__(self, e1, e2):
         self.e1 = e1
@@ -130,12 +137,15 @@ class Cif2:
     def plug(self, fn):
         return JIf(self.e0, self.e1, fn)
 class CApp:
-    def __init__(self, args):
+    def __init__(self, func, args):
+        self.func = func
+        self.args = args
         for i, item in enumerate(args):
-            if isinstance(args, CHole):
+            if isinstance(item, CHole):
                 self.hdex = i
     def plug(self, p):
         self.args[self.hdex] = p
+        return JApp(self.func, self.args)
         
 def desugar(sexpr):
     # e = v
@@ -191,47 +201,68 @@ def find_redex(jexpr):
             if not isinstance(arg, JNumber):
                 tempargs = jexpr.args
                 tempargs[i] = CHole()
-                return [CApp(tempargs), arg]
+                return [CApp(jexpr.func, tempargs), arg]
         #all terms of JApp are simplified - no redex found
         return False
 
 def ssinterp(jexpr):
     #if e = v return e
-    context_redex = find_redex(jexpr)
-    print(context_redex[1].pp())
+    if type(jexpr) in [JNumber, JBool]:
+        return jexpr
+    t_context_redex = find_redex(jexpr)
+    while(t_context_redex):
+        context_redex = t_context_redex #if a redex is found, then C, e' = find_redex(e)
+        context_redex[1] = step(context_redex[1]) #recursively call interp to check for more redexes inside e' or call step(e')
+        jexpr = context_redex[0].plug(context_redex[1]) #plug hole with step(e')
+        t_context_redex = find_redex(jexpr) #look for next redex in jexpr
+    return step(jexpr) #if no redex found in jexpr, call step of jexpr
     
-    # while(context_redex):
-        # ssinterp(context_redex[1])
-        
     
-    
-# def step(jexpr):
-    # if isinstance(jexpr, )
-        
+def step(jexpr):
+    #step(v) = v
+    if type(jexpr) in [JNumber, JBool]:
+        return jexpr
+    if isinstance(jexpr, JApp):
+        #step(v ... ((if) | (fn)) e ...) = (v .... step(arg) e ...)
+        for i, arg in enumerate(jexpr.args):
+            if type(arg) not in [JNumber, JBool]:
+                jexpr.args[i] = step(arg)
+                return jexpr
+        #step(p v ...) = delta(e)
+        return delta(jexpr)
+    if isinstance(jexpr, JIf) and isinstance(jexpr.cond, JBool):
+        #step(if true et ef) = et
+        if (jexpr.cond.b):
+            return jexpr.tn
+        #step(if false et ef) = ef
+        else:
+            return jexpr.fn
+    #step(if ((if) | (fn)) et ef) = (if step(cond) et ef)
+    if isinstance(jexpr, JIf):
+        return JIf(step(jexpr.cond), jexpr.tn, jexpr.fn)
 
-expected = [10, 54, 0, 8, 12, 3, 24, 3, 2, False, False, False, True, False, 3, 4]
+expected = [9, 10, 54, 5, 0, 8, 12, 3, 24, 3, 2, False, False, False, True, False, 3, 4]
 
 test_values = [    
-    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeNum(1), SeEmp()))), SeEmp()))), SeEmp())))
-    # ,
-    # SeNum(54),
-    # SeCons(SeStr('+'), SeEmp()),
-    # SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
-    # SApp(SeStr('+'), SeNum(4), SeNum(8)),
-    # SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
-    # SApp(SeStr('*'), SeNum(4), SeNum(6)),
-    # SApp(SeStr('/'), SeNum(9), SeNum(3)),
-    # SApp(SeStr('-'), SeNum(13), SeNum(11)),
-    # SApp(SeStr('<='), SeNum(5), SeNum(3)),
-    # SApp(SeStr('<'), SeNum(12), SeNum(12)),
-    # SApp(SeStr('=='), SeNum(4), SeNum(8)),
-    # SApp(SeStr('>'), SeNum(2), SeNum(1)),
-    # SApp(SeStr('>='), SeNum(7), SeNum(16)),
-    # SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
-    # SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
+    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeNum(2), SeEmp()))), SeEmp()))),
+    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeNum(1), SeEmp()))), SeEmp()))), SeEmp()))),
+    SeNum(54),
+    SApp(SeStr('+'), SApp(SeStr('*'), SeNum(2), SeNum(2)), SApp(SeStr('-'), SeNum(2), SeNum(1))),
+    SeCons(SeStr('+'), SeEmp()),
+    SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
+    SApp(SeStr('+'), SeNum(4), SeNum(8)),
+    SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
+    SApp(SeStr('*'), SeNum(4), SeNum(6)),
+    SApp(SeStr('/'), SeNum(9), SeNum(3)),
+    SApp(SeStr('-'), SeNum(13), SeNum(11)),
+    SApp(SeStr('<='), SeNum(5), SeNum(3)),
+    SApp(SeStr('<'), SeNum(12), SeNum(12)),
+    SApp(SeStr('=='), SeNum(4), SeNum(8)),
+    SApp(SeStr('>'), SeNum(2), SeNum(1)),
+    SApp(SeStr('>='), SeNum(7), SeNum(16)),
+    SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
+    SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
 ]
 
 for index, value in enumerate(test_values):
-    ssinterp(desugar(value))
-    # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nexpected: ' + str(expected[index]) + '\n')
-    # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')  
+    print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')  
