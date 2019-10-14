@@ -166,6 +166,32 @@ def SApp(op, l, r):
 def SIf(cond, tn, fn):
     return SeCons(SeStr('if'), SeCons(cond, SeCons(tn, SeCons(fn, SeEmp()))))
     
+def find_redex(jexpr):
+    #no redex found
+    if type(jexpr) in [JNumber, JBool, JPrim]:
+        return False
+    if isinstance(jexpr, JIf):
+        #Cif0
+        if not isinstance(jexpr.cond, JBool):
+            return [Cif0(jexpr.tn, jexpr.fn), jexpr.cond]
+        #Cif1
+        if type(jexpr.tn) not in [JNumber, JBool, JPrim]:
+            return [Cif1(jexpr.cond, jexpr.fn), jexpr.tn]
+        #Cif2
+        if type(jexpr.fn) not in [JNumber, JBool, JPrim]:
+            return [Cif2(jexpr.cond, jexpr.tn), jexpr.fn]
+        #all terms of JIf are simplified - no redex found
+        return False
+    if isinstance(jexpr, JApp):
+        for i, arg in enumerate(jexpr.args):
+            #Capp
+            if not isinstance(arg, JNumber):
+                tempargs = jexpr.args
+                tempargs[i] = CHole()
+                return [CApp(tempargs), arg]
+        #all terms of JApp are simplified - no redex found
+        return False
+
 expected = [54, 0, 8, 12, 3, 24, 3, 2, False, False, False, True, False, 3, 4]
 
 test_values = [    
