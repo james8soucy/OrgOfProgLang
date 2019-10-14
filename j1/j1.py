@@ -56,32 +56,37 @@ class JApp:
         self.func = func
         self.args = args
     def pp(self):
-        return "(fn " + self.func.pp() + ", " + self.args.pp() + ")"
+        return "(fn " + self.func.pp() + ", " + str([arg.pp() for arg in self.args]) + ")"
     def interp(self):
         _func = self.func.interp().p
-        _args = [self.args.interp().l.n, self.args.interp().r.l.n]
         if (_func == '+'):
-            return JNumber(_args[0] + _args[1])
+            sum = 0
+            for arg in self.args:
+                sum = sum + arg.interp().n
+            return JNumber(sum)
         if (_func == '*'):
-            return JNumber(_args[0] * _args[1])
+            prd = 1
+            for arg in self.args:
+                prd = prd * arg.interp().n
+            return JNumber(prd)
         if (_func == '-'):
-            if(isinstance(_args[1], JEmp)):
-                return JNumber(-1 * _args[1])
-            return JNumber(_args[0] - _args[1])
+            if(len(self.args) == 1):
+                return JNumber(-1 * self.args[1].interp().n)
+            return JNumber(self.args[0].interp().n - self.args[1].interp().n)
         if (_func == '/'):
-            return JNumber(_args[0] / _args[1])
+            return JNumber(self.args[0].interp().n / self.args[1].interp().n)
         if (_func == '<'):
-            return JBool(_args[0] < _args[1])
+            return JBool(self.args[0].interp().n < self.args[1].interp().n)
         if (_func == '>'):
-            return JBool(_args[0] > _args[1])
+            return JBool(self.args[0].interp().n > self.args[1].interp().n)
         if (_func == '=='):
-            return JBool(_args[0] == _args[1])
+            return JBool(self.args[0].interp().n == self.args[1].interp().n)
         if (_func == '<='):
-            return JBool(_args[0] <= _args[1])
+            return JBool(self.args[0].interp().n <= self.args[1].interp().n)
         if (_func == '>='):
-            return JBool(_args[0] >= _args[1])
+            return JBool(self.args[0].interp().n >= self.args[1].interp().n)
         if (_func == '!='):
-            return JBool(_args[0] != _args[1])
+            return JBool(self.args[0].interp().n != self.args[1].interp().n)
 class SeStr:
     def __init__(self, s):
         self.s = s
@@ -99,37 +104,51 @@ class SeCons:
 #C := hole | (if C e e) | (if e C e) | (if e e C) | (e ... C ... e)
 class CHole:
     def __init__(self):
-        pass
+        self.h = None
+    def plug(self, p):
+        return p
 class Cif0:
     def __init__(self, e1, e2):
         self.e1 = e1
         self.e2 = e2
+    def plug(self, cond):
+        return JIf(cond, self.e1, self.e2)
 class Cif1:
     def __init__(self, e0, e2):
         self.e0 = e0
         self.e2 = e2
+    def plug(self, tn):
+        return JIf(self.e0, tn, self.e2)
 class Cif2:
     def __init__(self, e0, e1):
         self.e0 = e0
         self.e1 = e1
+    def plug(self, fn):
+        return JIf(self.e0, self.e1, fn)
 class CApp:
-    def __init__(self, r, l):
-        self.r = r
-        self.l = l
+    def __init__(self, args):
+        self.func = func
+        for i, item in enumerate(args):
+            if isinstance(args, CHole):
+                self.hdex = i
+    def plug(self, p):
+        self.args[self.hdex] = p
         
 def desugar(sexpr):
     # e = v
     if isinstance(sexpr, SeNum):
         return JNumber(sexpr.n)
-    # e = (+ e e)
-    if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == '+' and isinstance(sexpr.r, SeCons)):
-        return JApp(JPrim(sexpr.l.s), JCons(desugar(sexpr.r.l), JCons(desugar(SeCons(SeStr('+'), sexpr.r.r)), JEmp())))
-    # e = (* e e)
-    if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == '*' and isinstance(sexpr.r, SeCons)):
-        return JApp(JPrim(sexpr.l.s), JCons(desugar(sexpr.r.l), JCons(desugar(SeCons(SeStr('*'), sexpr.r.r)), JEmp())))
+    # e = (+ e e ...) | e = (* e e ...) 
+    if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s in ['+', '*'] and isinstance(sexpr.r, SeCons)):
+        tempS = sexpr.r
+        args = [desugar(tempS.l)]
+        while not isinstance(tempS.r, SeEmp):
+            tempS = tempS.r
+            args.append(desugar(tempS.l))
+        return JApp(JPrim(sexpr.l.s), args)
     # e = (e e ...)
     if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and isinstance(sexpr.r, SeCons) and isinstance(sexpr.r.r, SeCons) and isinstance(sexpr.r.r.r, SeEmp):
-        return JApp(JPrim(sexpr.l.s), JCons(desugar(sexpr.r.l), JCons(desugar(sexpr.r.r.l), JEmp())))
+        return JApp(JPrim(sexpr.l.s), [desugar(sexpr.r.l), desugar(sexpr.r.r.l)])
     # e = (if e e e)
     if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == 'if'  and isinstance(sexpr.r, SeCons)  and isinstance(sexpr.r.r, SeCons)  and isinstance(sexpr.r.r.r, SeCons) and isinstance(sexpr.r.r.r.r, SeEmp):
         return JIf(desugar(sexpr.r.l), desugar(sexpr.r.r.l), desugar(sexpr.r.r.r.l))
