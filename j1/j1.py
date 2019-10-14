@@ -96,10 +96,27 @@ class SeCons:
         self.l = l
         self.r = r
 
+#C := hole | (if C e e) | (if e C e) | (if e e C) | (e ... C ... e)
 class CHole:
     def __init__(self):
         pass
-
+class Cif0:
+    def __init__(self, e1, e2):
+        self.e1 = e1
+        self.e2 = e2
+class Cif1:
+    def __init__(self, e0, e2):
+        self.e0 = e0
+        self.e2 = e2
+class Cif2:
+    def __init__(self, e0, e1):
+        self.e0 = e0
+        self.e1 = e1
+class CApp:
+    def __init__(self, r, l):
+        self.r = r
+        self.l = l
+        
 def desugar(sexpr):
     # e = v
     if isinstance(sexpr, SeNum):
