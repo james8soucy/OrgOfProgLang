@@ -131,7 +131,6 @@ class Cif2:
         return JIf(self.e0, self.e1, fn)
 class CApp:
     def __init__(self, args):
-        self.func = func
         for i, item in enumerate(args):
             if isinstance(args, CHole):
                 self.hdex = i
@@ -196,9 +195,15 @@ def find_redex(jexpr):
         #all terms of JApp are simplified - no redex found
         return False
 
-# def ssinterp(jexpr):
-    # context_redex = find_redex(jexpr)
+def ssinterp(jexpr):
+    #if e = v return e
+    context_redex = find_redex(jexpr)
+    print(context_redex[1].pp())
+    
     # while(context_redex):
+        # ssinterp(context_redex[1])
+        
+    
     
 # def step(jexpr):
     # if isinstance(jexpr, )
@@ -208,12 +213,11 @@ expected = [10, 54, 0, 8, 12, 3, 24, 3, 2, False, False, False, True, False, 3, 
 
 test_values = [    
     SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeNum(1), SeEmp()))), SeEmp()))), SeEmp())))
-    ,
-    SeNum(54),
-    SeCons(SeStr('+'), SeEmp()),
-    SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
-    SApp(SeStr('+'), SeNum(4), SeNum(8))
-    ,
+    # ,
+    # SeNum(54),
+    # SeCons(SeStr('+'), SeEmp()),
+    # SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
+    # SApp(SeStr('+'), SeNum(4), SeNum(8)),
     # SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
     # SApp(SeStr('*'), SeNum(4), SeNum(6)),
     # SApp(SeStr('/'), SeNum(9), SeNum(3)),
@@ -228,4 +232,6 @@ test_values = [
 ]
 
 for index, value in enumerate(test_values):
-    print('printed: ' + desugar(value).pp(), '\nresult: ' + desugar(value).interp().pp(), '\nexpected: ' + str(expected[index]) + '\n')  
+    ssinterp(desugar(value))
+    # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nexpected: ' + str(expected[index]) + '\n')
+    # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')  
