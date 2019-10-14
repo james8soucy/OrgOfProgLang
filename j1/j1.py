@@ -56,7 +56,11 @@ class JApp:
         self.func = func
         self.args = args
     def pp(self):
-        return "(fn " + self.func.pp() + ", " + str([arg.pp() for arg in self.args]) + ")"
+        retstr = "(fn " + self.func.pp() + " ["
+        for arg in self.args:
+            retstr = retstr + arg.pp() + " "
+        retstr = retstr + "])"
+        return retstr
     def interp(self):
         _func = self.func.interp().p
         if (_func == '+'):
@@ -192,24 +196,35 @@ def find_redex(jexpr):
         #all terms of JApp are simplified - no redex found
         return False
 
-expected = [54, 0, 8, 12, 3, 24, 3, 2, False, False, False, True, False, 3, 4]
+# def ssinterp(jexpr):
+    # context_redex = find_redex(jexpr)
+    # while(context_redex):
+    
+# def step(jexpr):
+    # if isinstance(jexpr, )
+        
+
+expected = [10, 54, 0, 8, 12, 3, 24, 3, 2, False, False, False, True, False, 3, 4]
 
 test_values = [    
+    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeNum(1), SeEmp()))), SeEmp()))), SeEmp())))
+    ,
     SeNum(54),
     SeCons(SeStr('+'), SeEmp()),
     SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
-    SApp(SeStr('+'), SeNum(4), SeNum(8)),
-    SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
-    SApp(SeStr('*'), SeNum(4), SeNum(6)),
-    SApp(SeStr('/'), SeNum(9), SeNum(3)),
-    SApp(SeStr('-'), SeNum(13), SeNum(11)),
-    SApp(SeStr('<='), SeNum(5), SeNum(3)),
-    SApp(SeStr('<'), SeNum(12), SeNum(12)),
-    SApp(SeStr('=='), SeNum(4), SeNum(8)),
-    SApp(SeStr('>'), SeNum(2), SeNum(1)),
-    SApp(SeStr('>='), SeNum(7), SeNum(16)),
-    SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
-    SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
+    SApp(SeStr('+'), SeNum(4), SeNum(8))
+    ,
+    # SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
+    # SApp(SeStr('*'), SeNum(4), SeNum(6)),
+    # SApp(SeStr('/'), SeNum(9), SeNum(3)),
+    # SApp(SeStr('-'), SeNum(13), SeNum(11)),
+    # SApp(SeStr('<='), SeNum(5), SeNum(3)),
+    # SApp(SeStr('<'), SeNum(12), SeNum(12)),
+    # SApp(SeStr('=='), SeNum(4), SeNum(8)),
+    # SApp(SeStr('>'), SeNum(2), SeNum(1)),
+    # SApp(SeStr('>='), SeNum(7), SeNum(16)),
+    # SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
+    # SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
 ]
 
 for index, value in enumerate(test_values):
