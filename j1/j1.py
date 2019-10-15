@@ -132,7 +132,7 @@ class CApp:
             if isinstance(item, CHole):
                 self.hdex = i
     def plug(self, p):
-        self.args[self.hdex] = p
+        self.args[self.hdex] = self.args[self.hdex].plug(p)
         return JApp(self.func, self.args)
         
 def desugar(sexpr):
@@ -168,9 +168,9 @@ def SIf(cond, tn, fn):
     return SeCons(SeStr('if'), SeCons(cond, SeCons(tn, SeCons(fn, SeEmp()))))
     
 def find_redex(jexpr):
-    #no redex found
+    #CHole
     if type(jexpr) in [JNumber, JBool, JPrim]:
-        return False
+        return [CHole(), jexpr]
     if isinstance(jexpr, JIf):
         #Cif0
         if not isinstance(jexpr.cond, JBool):
