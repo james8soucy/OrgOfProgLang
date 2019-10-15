@@ -1,3 +1,5 @@
+import copy #needed for temp arrays
+
 # J1
 # e = v | (e e ...) | (if e e e)
 # v = number | bool | prim
@@ -112,7 +114,23 @@ class CCState:
 def CCinterp(jexpr):
     state = CCState(jexpr, CHole())
     while not (type(state.j) in [JNumber, JBool] and isinstance(state.c, CHole)):
-        print('doing stuff')
+        if isinstance(state.j, JIf):
+            state = CCState(state.j.cond, Cif0(state.j.tn, state.j.fn))
+        if isinstance(state.j, JBool) and state.j.b == True:
+            state = CCState(state.c.e1, CHole())
+        if isinstance(state.j, JBool) and state.j.b == False:
+            state = CCState(state.c.e2, CHole())
+        if isinstance(state.j, JApp):
+            tempargs = copy.copy(state.j.args)
+            tempargs[0] = CHole()
+            state = CCState(state.j.args[0], CApp(state.j.func, tempargs))
+        if isinstance(state.j, JNumber) and isinstance(state.c, CApp) and not isinstance(state.c.args[len(state.c.args) - 1], CHole):
+            tempargs = copy.copy(state.c.args)
+            tempargs[state.c.hdex] = tempargs[state.c.hdex].plug(state.j)
+            tempargs[state.c.hdex + 1] = CHole()
+            state = CCState(state.c.args[state.c.hdex + 1], CApp(state.c.func, tempargs))
+        if isinstance(state.j, JNumber) and isinstance(state.c, CApp) and isinstance(state.c.args[len(state.c.args) - 1], CHole):
+            state = CCState(delta(state.c.plug(state.j)), CHole())
     return state.c.plug(state.j)
     
    
@@ -235,11 +253,13 @@ def delta(JA):
         return JBool(JA.args[0].interp().n != JA.args[1].interp().n)
 
 
-expected = [54, 4, 9, 10, 5, 0, 8, 12, 3, 24, 3, 2, False, False, False, True, False, 3, 4]
+expected = [54, 4, 5, 24, 9, 10, 5, 0, 8, 12, 3, 3, 2, False, False, False, True, False, 3, 4]
 
 test_values = [    
     SeNum(54),
-    SIf(SeStr(True), SeNum(4), SeNum(5))
+    SIf(SeStr(True), SeNum(4), SeNum(5)),
+    SIf(SeStr(False), SeNum(4), SeNum(5)),
+    SApp(SeStr('*'), SeNum(4), SeNum(6))
     # ,
     # SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeNum(2), SeEmp()))), SeEmp())))
     # ,
@@ -249,7 +269,6 @@ test_values = [
     # SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
     # SApp(SeStr('+'), SeNum(4), SeNum(8)),
     # SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
-    # SApp(SeStr('*'), SeNum(4), SeNum(6)),
     # SApp(SeStr('/'), SeNum(9), SeNum(3)),
     # SApp(SeStr('-'), SeNum(13), SeNum(11)),
     # SApp(SeStr('<='), SeNum(5), SeNum(3)),
@@ -263,5 +282,5 @@ test_values = [
 
 for index, value in enumerate(test_values):
     # ssinterp(desugar(value))
-    # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\ncc0 result: ' + CCinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
+    print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\ncc0 result: ' + CCinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
     
