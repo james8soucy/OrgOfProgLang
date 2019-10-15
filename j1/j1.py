@@ -175,14 +175,8 @@ def find_redex(jexpr):
         #Cif0
         if not isinstance(jexpr.cond, JBool):
             return [Cif0(jexpr.tn, jexpr.fn), jexpr.cond]
-        #Cif1
-        if type(jexpr.tn) not in [JNumber, JBool, JPrim]:
-            return [Cif1(jexpr.cond, jexpr.fn), jexpr.tn]
-        #Cif2
-        if type(jexpr.fn) not in [JNumber, JBool, JPrim]:
-            return [Cif2(jexpr.cond, jexpr.tn), jexpr.fn]
         #all terms of JIf are simplified - no redex found
-        return False
+        return [CHole(), jexpr]
     if isinstance(jexpr, JApp):
         for i, arg in enumerate(jexpr.args):
             #Capp
@@ -191,19 +185,17 @@ def find_redex(jexpr):
                 tempargs[i] = CHole()
                 return [CApp(jexpr.func, tempargs), arg]
         #all terms of JApp are simplified - no redex found
-        return False
-
+        return [CHole(), jexpr]
+        
 def ssinterp(jexpr):
-    #if e = v return e
-    if type(jexpr) in [JNumber, JBool]:
-        return jexpr
     t_context_redex = find_redex(jexpr)
-    while(t_context_redex):
+    #if e = v return e    
+    while(type(jexpr) not in [JNumber, JBool]):
         context_redex = t_context_redex #if a redex is found, then C, e' = find_redex(e)
         context_redex[1] = step(context_redex[1]) #recursively call interp to check for more redexes inside e' or call step(e')
         jexpr = context_redex[0].plug(context_redex[1]) #plug hole with step(e')
         t_context_redex = find_redex(jexpr) #look for next redex in jexpr
-    return step(jexpr) #if no redex found in jexpr, call step of jexpr
+    return jexpr #if no redex found in jexpr, call step of jexpr
     
     
 def step(jexpr):
@@ -253,4 +245,6 @@ test_values = [
 ]
 
 for index, value in enumerate(test_values):
-    print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')  
+    # ssinterp(desugar(value))
+    print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
+    
