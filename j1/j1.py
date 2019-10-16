@@ -127,23 +127,19 @@ class CCState:
         self.c = c
 
 def find_hole(cexpr, cholder):
-    print(cexpr.pp(), cholder.pp())
     if type(cexpr) not in [CApp, Cif0]:
         return False
     if any([isinstance(arg, CHole) for arg in cexpr.args]):
-        # print('done')
         return [cexpr, cholder]
     if isinstance(cexpr, CApp):
         for i, arg in enumerate(cexpr.args):
             t_held = copy.deepcopy(cexpr)
             t_holder = copy.deepcopy(cholder)
             t_held.args[i] = CHole()
-            # print(t_holder.args)
             if isinstance(t_holder, CHole):
                 t_holder = t_holder.plug(t_held)
             else:
                 t_holder.plug(t_held)
-            # print(t_holder.pp())
             if find_hole(arg, t_holder):
                 return [arg, t_holder]
     return False
@@ -155,14 +151,17 @@ def CCinterp(jexpr):
         if isinstance(state.j, JIf):
             state = CCState(state.j.cond, Cif0(state.j.tn, state.j.fn))
             print(state.j.pp() + '  ///  ' + state.c.pp())
+            continue
         if isinstance(state.j, JBool) and state.j.b == True:
             state = CCState(state.c.e1, CHole())
             print(state.j.pp() + '  ///  ' + state.c.pp())
+            continue
         if isinstance(state.j, JBool) and state.j.b == False:
             state = CCState(state.c.e2, CHole())
             print(state.j.pp() + '  ///  ' + state.c.pp())
+            continue
         if isinstance(state.j, JApp):
-            tempargs = copy.copy(state.j.args)
+            tempargs = copy.deepcopy(state.j.args)
             tempargs[0] = CHole()
             if isinstance(state.c, CHole):
                 state.c = state.c.plug(CApp(state.j.func, tempargs))
@@ -170,19 +169,25 @@ def CCinterp(jexpr):
                 state.c.plug(CApp(state.j.func, tempargs))
             state = CCState(state.j.args[0], state.c)
             print(state.j.pp() + '  ///  ' + state.c.pp())
+            continue
         if isinstance(state.j, JNumber) and isinstance(state.c, CApp) and not isinstance(state.c.args[len(state.c.args) - 1], CHole):
             t = find_hole(state.c, CHole())
-            print(t[0].pp(), t[1].pp())
-            tempargs = copy.copy(state.c.args)
-            tempargs[state.c.hdex] = tempargs[state.c.hdex].plug(state.j)
-            tempargs[state.c.hdex + 1] = CHole()
-            state.j = state.c.args[state.c.hdex + 1]
-            state.c.hdex += 1
-            state.c.args = tempargs
+            tempargs = t[0].args
+            tempargs[t[0].hdex] = tempargs[t[0].hdex].plug(state.j)
+            state.j = tempargs[t[0].hdex + 1]
+            tempargs[t[0].hdex + 1] = CHole()
+            t[0].hdex += 1
+            if isinstance(t[1], CHole):
+                state.c = t[1].plug(t[0])
+            else:
+                state.c = t[1]
+                state.c.plug(t[0])
             print(state.j.pp() + '  ///  ' + state.c.pp())
+            continue
         if isinstance(state.j, JNumber) and isinstance(state.c, CApp) and isinstance(state.c.args[len(state.c.args) - 1], CHole):
             state = CCState(delta(state.c.plug(state.j)), CHole())
             print(state.j.pp() + '  ///  ' + state.c.pp())
+            continue
     return state.c.plug(state.j)
   
 #TOMORROW
@@ -338,5 +343,5 @@ test_values = [
 for index, value in enumerate(test_values):
     # print(find_hole(CApp(JPrim('+'), [JNumber(4), CApp(JPrim('+'), [JNumber(5), CApp(JPrim('+'), [JNumber(6), CHole()])])]), CHole()))
     # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
-    # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\ncc0 result: ' + CCinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
+    print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\ncc0 result: ' + CCinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
     
