@@ -90,7 +90,7 @@ class CHole:
     def pp(self):
         #for testing purposes
         if self.h:
-            return self.h.pp()
+            return 'hole filled with' + self.h.pp()
         else:
             return 'HOLE'
 class Cif0:
@@ -107,7 +107,7 @@ class CApp:
         self.func = func
         self.args = args
         for i, item in enumerate(args):
-            if isinstance(item, CHole):
+            if type(item) in [CHole, CApp, Cif0]:
                 self.hdex = i
     def plug(self, p):
         self.args[self.hdex] = self.args[self.hdex].plug(p)
@@ -126,6 +126,28 @@ class CCState:
         self.j = j
         self.c = c
 
+def find_hole(cexpr, cholder):
+    print(cexpr.pp(), cholder.pp())
+    if type(cexpr) not in [CApp, Cif0]:
+        return False
+    if any([isinstance(arg, CHole) for arg in cexpr.args]):
+        # print('done')
+        return [cexpr, cholder]
+    if isinstance(cexpr, CApp):
+        for i, arg in enumerate(cexpr.args):
+            t_held = copy.deepcopy(cexpr)
+            t_holder = copy.deepcopy(cholder)
+            t_held.args[i] = CHole()
+            # print(t_holder.args)
+            if isinstance(t_holder, CHole):
+                t_holder = t_holder.plug(t_held)
+            else:
+                t_holder.plug(t_held)
+            # print(t_holder.pp())
+            if find_hole(arg, t_holder):
+                return [arg, t_holder]
+    return False
+    
 def CCinterp(jexpr):
     state = CCState(jexpr, CHole())
     print(state.j.pp() + '  ///  ' + state.c.pp())
@@ -149,6 +171,8 @@ def CCinterp(jexpr):
             state = CCState(state.j.args[0], state.c)
             print(state.j.pp() + '  ///  ' + state.c.pp())
         if isinstance(state.j, JNumber) and isinstance(state.c, CApp) and not isinstance(state.c.args[len(state.c.args) - 1], CHole):
+            t = find_hole(state.c, CHole())
+            print(t[0].pp(), t[1].pp())
             tempargs = copy.copy(state.c.args)
             tempargs[state.c.hdex] = tempargs[state.c.hdex].plug(state.j)
             tempargs[state.c.hdex + 1] = CHole()
@@ -312,6 +336,7 @@ test_values = [
 ]
 
 for index, value in enumerate(test_values):
+    # print(find_hole(CApp(JPrim('+'), [JNumber(4), CApp(JPrim('+'), [JNumber(5), CApp(JPrim('+'), [JNumber(6), CHole()])])]), CHole()))
     # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
-    print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\ncc0 result: ' + CCinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
+    # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\ncc0 result: ' + CCinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
     
