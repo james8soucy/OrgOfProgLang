@@ -80,7 +80,7 @@ class SeCons:
         self.l = l
         self.r = r
 
-#C := hole | (if C e e) | (if e C e) | (if e e C) | (e ... C ... e)
+#C := hole | (if C e e) | (e ... C ... e)
 class CHole:
     def __init__(self):
         self.h = None
@@ -95,13 +95,14 @@ class CHole:
             return 'HOLE'
 class Cif0:
     def __init__(self, e1, e2):
-        self.hole = CHole()
+        self.cond = CHole()
         self.e1 = e1
         self.e2 = e2
     def plug(self, cond):
-        self.hole = cond
+        self.cond = cond
         return JIf(cond, self.e1, self.e2)
-        # return self
+    def pp(self):
+        return "{if " + self.cond.pp() + ", " + self.e1.pp() + ", " + self.e2.pp() + "}"
 class CApp:
     def __init__(self, func, args):
         self.func = func
@@ -110,15 +111,17 @@ class CApp:
             if type(item) in [CHole, CApp, Cif0]:
                 self.hdex = i
     def plug(self, p):
-        self.args[self.hdex] = self.args[self.hdex].plug(p)
+        if isinstance(self.args[self.hdex], CHole):
+            self.args[self.hdex] = self.args[self.hdex].plug(p)
+        else:
+            self.args[self.hdex].plug(p)
         return JApp(self.func, self.args)
-        # return self
     def pp(self):
         #for testing
-        retstr = "(fn " + self.func.pp() + " ["
+        retstr = "{fn " + self.func.pp() + " ["
         for arg in self.args:
             retstr = retstr + arg.pp() + " "
-        retstr = retstr + "])"
+        retstr = retstr + "]}"
         return retstr
    
 class CCState:
@@ -129,9 +132,9 @@ class CCState:
 def find_hole(cexpr, cholder):
     if type(cexpr) not in [CApp, Cif0]:
         return False
-    if any([isinstance(arg, CHole) for arg in cexpr.args]):
-        return [cexpr, cholder]
     if isinstance(cexpr, CApp):
+        if any([isinstance(arg, CHole) for arg in cexpr.args]):
+            return [cexpr, cholder]
         for i, arg in enumerate(cexpr.args):
             t_held = copy.deepcopy(cexpr)
             t_holder = copy.deepcopy(cholder)
@@ -141,24 +144,36 @@ def find_hole(cexpr, cholder):
             else:
                 t_holder.plug(t_held)
             if find_hole(arg, t_holder):
-                return [arg, t_holder]
+                return find_hole(arg, t_holder)
+    if isinstance(cexpr, Cif0):
+        if any([isinstance(arg, CHole) for arg in [cexpr.cond, cexpr.e1, cexpr.e2]]):
+            return [cexpr, cholder]
+        t_held = copy.deepcopy(cexpr)
+        t_holder = copy.deepcopy(cholder)
+        t_held.cond = CHole()
+        if isinstance(t_holder, CHole):
+            t_holder = t_holder.plug(t_held)
+        else:
+            t_holder.plug(t_held)
+        return find_hole(cexpr.cond, t_holder)
     return False
     
 def CCinterp(jexpr):
     state = CCState(jexpr, CHole())
-    print(state.j.pp() + '  ///  ' + state.c.pp())
+    # print(state.j.pp() + '  ///  ' + state.c.pp())
     while not (type(state.j) in [JNumber, JBool] and isinstance(state.c, CHole)):
+        t = find_hole(state.c, CHole())
         if isinstance(state.j, JIf):
             state = CCState(state.j.cond, Cif0(state.j.tn, state.j.fn))
-            print(state.j.pp() + '  ///  ' + state.c.pp())
+            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
         if isinstance(state.j, JBool) and state.j.b == True:
             state = CCState(state.c.e1, CHole())
-            print(state.j.pp() + '  ///  ' + state.c.pp())
+            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
         if isinstance(state.j, JBool) and state.j.b == False:
             state = CCState(state.c.e2, CHole())
-            print(state.j.pp() + '  ///  ' + state.c.pp())
+            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
         if isinstance(state.j, JApp):
             tempargs = copy.deepcopy(state.j.args)
@@ -168,32 +183,25 @@ def CCinterp(jexpr):
             else:
                 state.c.plug(CApp(state.j.func, tempargs))
             state = CCState(state.j.args[0], state.c)
-            print(state.j.pp() + '  ///  ' + state.c.pp())
+            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
-        if isinstance(state.j, JNumber) and isinstance(state.c, CApp) and not isinstance(state.c.args[len(state.c.args) - 1], CHole):
-            t = find_hole(state.c, CHole())
-            tempargs = t[0].args
-            tempargs[t[0].hdex] = tempargs[t[0].hdex].plug(state.j)
-            state.j = tempargs[t[0].hdex + 1]
-            tempargs[t[0].hdex + 1] = CHole()
+        if isinstance(state.j, JNumber) and isinstance(t[0], CApp) and not isinstance(t[0].args[len(t[0].args) - 1], CHole):
+            t[0].args[t[0].hdex] = t[0].args[t[0].hdex].plug(state.j)
+            state.j = t[0].args[t[0].hdex + 1]
+            t[0].args[t[0].hdex + 1] = CHole()
             t[0].hdex += 1
             if isinstance(t[1], CHole):
                 state.c = t[1].plug(t[0])
             else:
                 state.c = t[1]
                 state.c.plug(t[0])
-            print(state.j.pp() + '  ///  ' + state.c.pp())
+            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
-        if isinstance(state.j, JNumber) and isinstance(state.c, CApp) and isinstance(state.c.args[len(state.c.args) - 1], CHole):
-            state = CCState(delta(state.c.plug(state.j)), CHole())
-            print(state.j.pp() + '  ///  ' + state.c.pp())
+        if isinstance(state.j, JNumber) and isinstance(t[0], CApp) and isinstance(t[0].args[len(t[0].args) - 1], CHole):
+            state = CCState(delta(t[0].plug(state.j)), t[1])
+            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
     return state.c.plug(state.j)
-  
-#TOMORROW
-# FUNCTION TO FIND WHAT HOLDS HOLE AT ANY DEPTH RECURSIVELY WHICH RETURNS STRUCTURE THAT HOLDS HOLE AND STRUCTURE THAT HOLDS STRUCTURE, WITH HOLE IN PLACE OF STRUCTURE
-# CAPP.PLUG SHOULD ALREADY WORK RECURSIVELY
-# IN FINAL RULE CALL THAT FUNCTION AND PLUG TO FIRST STRUCTURE AND SET STATE TO HOLD RESULT OF PLUGGING AND DELTAING FIRST RESULT FROM FN WITH STATE.J AND SECOND RESULT FROM FN AS STATE.C
 
 def desugar(sexpr):
     # e = v
@@ -314,30 +322,30 @@ def delta(JA):
         return JBool(JA.args[0].interp().n != JA.args[1].interp().n)
 
 
-expected = [54, 4, 5, 24, 9, 10, 5, 0, 8, 12, 3, 3, 2, False, False, False, True, False, 3, 4]
+expected = [54, 24, 9, 10, 5, 0, 8, 12, 3, 3, 2, False, False, False, True, False, 4, 5, 3, 4]
 
 test_values = [    
-    # SeNum(54),
-    # SIf(SeStr(True), SeNum(4), SeNum(5)),
-    # SIf(SeStr(False), SeNum(4), SeNum(5)),
-    # SApp(SeStr('*'), SeNum(4), SeNum(6)),
-    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeNum(2), SeEmp()))), SeEmp())))
-    # ,
-    # SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeNum(1), SeEmp()))), SeEmp()))), SeEmp()))),
-    # SApp(SeStr('+'), SApp(SeStr('*'), SeNum(2), SeNum(2)), SApp(SeStr('-'), SeNum(2), SeNum(1))),
-    # SeCons(SeStr('+'), SeEmp()),
-    # SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
-    # SApp(SeStr('+'), SeNum(4), SeNum(8)),
-    # SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
-    # SApp(SeStr('/'), SeNum(9), SeNum(3)),
-    # SApp(SeStr('-'), SeNum(13), SeNum(11)),
-    # SApp(SeStr('<='), SeNum(5), SeNum(3)),
-    # SApp(SeStr('<'), SeNum(12), SeNum(12)),
-    # SApp(SeStr('=='), SeNum(4), SeNum(8)),
-    # SApp(SeStr('>'), SeNum(2), SeNum(1)),
-    # SApp(SeStr('>='), SeNum(7), SeNum(16)),
-    # SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
-    # SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
+    SeNum(54),
+    SApp(SeStr('*'), SeNum(4), SeNum(6)),
+    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeNum(2), SeEmp()))), SeEmp()))),
+    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeNum(1), SeEmp()))), SeEmp()))), SeEmp())))
+    ,
+    SApp(SeStr('+'), SApp(SeStr('*'), SeNum(2), SeNum(2)), SApp(SeStr('-'), SeNum(2), SeNum(1))),
+    SeCons(SeStr('+'), SeEmp()),
+    SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
+    SApp(SeStr('+'), SeNum(4), SeNum(8)),
+    SeCons(SeStr('+'), SeCons(SeNum(1), SeCons(SeNum(1), SeCons(SeNum(1), SeEmp())))),
+    SApp(SeStr('/'), SeNum(9), SeNum(3)),
+    SApp(SeStr('-'), SeNum(13), SeNum(11)),
+    SApp(SeStr('<='), SeNum(5), SeNum(3)),
+    SApp(SeStr('<'), SeNum(12), SeNum(12)),
+    SApp(SeStr('=='), SeNum(4), SeNum(8)),
+    SApp(SeStr('>'), SeNum(2), SeNum(1)),
+    SApp(SeStr('>='), SeNum(7), SeNum(16)),
+    SIf(SeStr(True), SeNum(4), SeNum(5)),
+    SIf(SeStr(False), SeNum(4), SeNum(5)),
+    SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
+    SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
 ]
 
 for index, value in enumerate(test_values):
