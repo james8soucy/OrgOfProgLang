@@ -103,6 +103,14 @@ class Cif0:
         return JIf(cond, self.e1, self.e2)
     def pp(self):
         return "{if " + self.cond.pp() + ", " + self.e1.pp() + ", " + self.e2.pp() + "}"
+# class Cif1:
+    # def __init__(self, e0, e2):
+        # self.e0 = e0
+        # self.e2 = e2
+# class Cif2:
+    # def __init__(self, e0, e1):
+        # self.e0 = e0
+        # self.e1 = e1
 class CApp:
     def __init__(self, func, args):
         self.func = func
@@ -240,7 +248,7 @@ def SIf(cond, tn, fn):
 def find_redex(jexpr):
     #CHole
     if type(jexpr) in [JNumber, JBool, JPrim]:
-        return [CHole(), jexpr]
+        return False
     if isinstance(jexpr, JIf):
         #Cif0
         if not isinstance(jexpr.cond, JBool):
@@ -260,7 +268,7 @@ def find_redex(jexpr):
 def ssinterp(jexpr):
     t_context_redex = find_redex(jexpr)
     #if e = v return e    
-    while(type(jexpr) not in [JNumber, JBool]):
+    while(t_context_redex):
         context_redex = t_context_redex #if a redex is found, then C, e' = find_redex(e)
         context_redex[1] = step(context_redex[1]) #recursively call interp to check for more redexes inside e' or call step(e')
         jexpr = context_redex[0].plug(context_redex[1]) #plug hole with step(e')
