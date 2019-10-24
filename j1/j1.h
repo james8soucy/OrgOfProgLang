@@ -1,11 +1,22 @@
 #include<stdio.h>
 
-enum JTag{JNUMBER, JBOOL, JPRIM, JAPP, JIF}
+typedef enum JTag{JNUMBER, JBOOL, JPRIM, JAPP, JIF} JTag;
 
-typedef enum JTag JTag
+//acts as a sort of interface
+typedef struct {JTag t;} JObj;
 
-struct JNumber
-{
-	JTag tag;
-	int n;
-};
+// e::= v ::= number
+typedef struct JNumber{JObj o; int n;} JNumber;
+
+// e::= v ::= bool
+typedef struct JBool{JObj o; char b;} JBool;
+
+// e::= v ::= prim
+typedef struct JPrim{JObj o; char p;} JPrim;
+
+// e::= (e e ...)
+typedef struct JApp{JObj o; JPrim* func; JObj* args;} JApp;
+
+// e::= (if e e e)
+typedef struct JIf{JObj o; JObj* cond; JObj* tn; JObj* fn;} JIf;
+
