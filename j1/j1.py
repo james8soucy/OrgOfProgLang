@@ -160,20 +160,16 @@ def find_hole(cexpr, cholder):
     
 def CCinterp(jexpr):
     state = CCState(jexpr, CHole())
-    # print(state.j.pp() + '  ///  ' + state.c.pp())
     while not (type(state.j) in [JNumber, JBool] and isinstance(state.c, CHole)):
         t = find_hole(state.c, CHole())
         if isinstance(state.j, JIf):
             state = CCState(state.j.cond, Cif0(state.j.tn, state.j.fn))
-            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
         if isinstance(state.j, JBool) and state.j.b == True:
             state = CCState(state.c.e1, CHole())
-            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
         if isinstance(state.j, JBool) and state.j.b == False:
             state = CCState(state.c.e2, CHole())
-            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
         if isinstance(state.j, JApp):
             tempargs = copy.deepcopy(state.j.args)
@@ -183,7 +179,6 @@ def CCinterp(jexpr):
             else:
                 state.c.plug(CApp(state.j.func, tempargs))
             state = CCState(state.j.args[0], state.c)
-            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
         if isinstance(state.j, JNumber) and isinstance(t[0], CApp) and not isinstance(t[0].args[len(t[0].args) - 1], CHole):
             t[0].args[t[0].hdex] = t[0].args[t[0].hdex].plug(state.j)
@@ -195,11 +190,9 @@ def CCinterp(jexpr):
             else:
                 state.c = t[1]
                 state.c.plug(t[0])
-            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
         if isinstance(state.j, JNumber) and isinstance(t[0], CApp) and isinstance(t[0].args[len(t[0].args) - 1], CHole):
             state = CCState(delta(t[0].plug(state.j)), t[1])
-            # print(state.j.pp() + '  ///  ' + state.c.pp())
             continue
     return state.c.plug(state.j)
 
@@ -349,7 +342,5 @@ test_values = [
 ]
 
 for index, value in enumerate(test_values):
-    # print(find_hole(CApp(JPrim('+'), [JNumber(4), CApp(JPrim('+'), [JNumber(5), CApp(JPrim('+'), [JNumber(6), CHole()])])]), CHole()))
-    # print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\nsmall-step result: ' + ssinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
     print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\ncc0 result: ' + CCinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
     
