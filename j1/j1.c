@@ -21,6 +21,9 @@ void pp_jObj(JObj* jO)
 	case JIF:
 		pp_jIf((JIf*)jO);
 		break;
+	case JCONS:
+		pp_jCons((JCons*)jO);
+		break;
 	default:
 		printf("tag not found");
 		exit(1);
@@ -59,29 +62,22 @@ void pp_jPrim(JPrim* jP)
 {
 	printf("JPrim(%c)", jP->p);
 }
-JApp* jApp(JPrim func, JObj* args, int argc)
+JApp* jApp(JPrim func, JObj* args)
 {
+	JNumber* test = ((JNumber*)args);
 	JApp* item = (JApp*)malloc(sizeof(JApp));
 	item->o.t = JAPP;
 	item->func = func;
 	item->args = args;
-	item->argc = argc;
 	return item;
 }
 void pp_jApp(JApp* jA)
 {
 	printf("JApp(");
 	pp_jPrim(&(jA->func));
-	printf(", [");
-	for (int i = 0; i < jA->argc; i++)
-	{
-		pp_jObj((JObj*)&jA->args[i]);
-		if (i != jA->argc - 1)
-		{
-			printf(", ");
-		}
-	}
-	printf("])");
+	printf(", ");
+	pp_jObj(jA->args);
+	printf(")");
 }
 JIf* jIf(JObj* cond, JObj* tn, JObj* fn)
 {
@@ -100,5 +96,28 @@ void pp_jIf(JIf* jI)
 	pp_jObj(jI->tn);
 	printf(", ");
 	pp_jObj(jI->fn);
+	printf(")");
+}
+JCons* jCons(JObj* l, JCons* r)
+{
+	JCons* item = (JCons*)malloc(sizeof(JCons));
+	item->o.t = JCONS;
+	item->l = l;
+	item->r = r;
+	return item;
+}
+void pp_jCons(JCons* jC)
+{
+	printf("JCons(");
+	pp_jObj(jC->l);
+	printf(", ");
+	if (jC->r != NULL)
+	{
+		pp_jObj(jC->r);
+	}
+	else
+	{
+		printf("NULL");
+	}
 	printf(")");
 }
