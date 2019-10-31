@@ -103,14 +103,7 @@ class Cif0:
         return JIf(cond, self.e1, self.e2)
     def pp(self):
         return "{if " + self.cond.pp() + ", " + self.e1.pp() + ", " + self.e2.pp() + "}"
-# class Cif1:
-    # def __init__(self, e0, e2):
-        # self.e0 = e0
-        # self.e2 = e2
-# class Cif2:
-    # def __init__(self, e0, e1):
-        # self.e0 = e0
-        # self.e1 = e1
+
 class CApp:
     def __init__(self, func, args):
         self.func = func
