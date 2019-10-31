@@ -9,6 +9,8 @@ class JNumber:
         self.n = n
     def pp(self):
         return str(self.n)
+    def pp_ll(self):
+        return 'jNumber(' + str(self.n) + ')'
     def interp(self):
         return self
 class JEmp:
@@ -16,16 +18,10 @@ class JEmp:
         pass
     def pp(self):
         return "{}"
+    def pp_ll(self):
+        return 'NULL'
     def interp(self):
         return self
-class JCons:
-    def __init__(self, l, r):
-        self.l = l
-        self.r = r
-    def pp(self):
-        return "(" + self.l.pp() + ", " + self.r.pp() + ")"
-    def interp(self):
-        return JCons(self.l.interp(), self.r.interp())
 class JIf:
     def __init__(self, cond, tn, fn):
         self.cond = cond
@@ -33,6 +29,8 @@ class JIf:
         self.fn = fn
     def pp(self):
         return "(if " + self.cond.pp() + ", " + self.tn.pp() + ", " + self.fn.pp() + ")"
+    def pp_ll(self):
+        return 'jIf(' + self.cond.pp_ll() + ', ' + self.tn.pp_ll() + ', ' + self.fn.pp_ll() + ')'
     def interp(self):
         _cond = self.cond.interp()
         if (_cond.b):
@@ -44,6 +42,8 @@ class JBool:
         self.b = b
     def pp(self):
         return str(self.b)
+    def pp_ll(self):
+        return 'jBool(' + int(self.b) + ')' 
     def interp(self):
         return self
 class JPrim:
@@ -51,6 +51,8 @@ class JPrim:
         self.p = p
     def pp(self):
         return str(self.p)
+    def pp_ll(self):
+        return "jPrim(" + "'" + self.p + "')"
     def interp(self):
         return self
 class JApp:
@@ -63,6 +65,18 @@ class JApp:
             retstr = retstr + arg.pp() + " "
         retstr = retstr + "])"
         return retstr
+    def pp_ll(self):
+        retstr = 'jApp(*' + self.func.pp_ll() + ', '
+        rettail = ')'
+        for i, arg in enumerate(self.args):
+            # print(retstr)
+            if i + 1 < len(self.args):
+                retstr = retstr + 'jCons(' + arg.pp_ll() + ', '
+                rettail = rettail + ')'
+            else:
+                retstr = retstr + 'jCons(' + arg.pp_ll() + ', ' + JEmp().pp_ll()
+                rettail = rettail + ')'
+        return retstr + rettail 
     def interp(self):
         return delta(self)
 
@@ -343,5 +357,4 @@ test_values = [
 ]
 
 for index, value in enumerate(test_values):
-    print('printed: ' + desugar(value).pp(), '\nbig-step result: ' + desugar(value).interp().pp(), '\ncc0 result: ' + CCinterp(desugar(value)).pp(), '\nexpected: ' + str(expected[index]) + '\n')
-    
+    print(desugar(value).pp_ll())

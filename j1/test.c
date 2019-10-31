@@ -8,6 +8,7 @@ int main(int argc, char* argv[])
 	JBool* test2 = jBool(1);
 	JApp* test3 = jApp(*jPrim('+'), jCons(jNumber(0), jCons(jNumber(2), NULL)));
 	JIf* test4 = jIf(jApp(*jPrim('>'), jCons(jNumber(3), jCons(jNumber(4), NULL))), jNumber(5), jNumber(3));
+	JIf* test4 = jIf(jBool(1), jNumber(4), jNumber(2));
 	pp_jObj(test1);
 	printf("\n");
 	pp_jObj(test2);
