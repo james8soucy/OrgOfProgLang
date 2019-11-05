@@ -1,4 +1,5 @@
 import copy #needed for temp arrays
+import os #needed for pathing
 
 # J1
 # e = v | (e e ...) | (if e e e)
@@ -43,7 +44,7 @@ class JBool:
     def pp(self):
         return str(self.b)
     def pp_ll(self):
-        return 'jBool(' + int(self.b) + ')' 
+        return 'jBool(' + str(int(self.b)) + ')' 
     def interp(self):
         return self
 class JPrim:
@@ -329,7 +330,14 @@ def delta(JA):
     if (_func == '!='):
         return JBool(JA.args[0].interp().n != JA.args[1].interp().n)
 
-
+def pp_ll(ins):
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out.c'), 'w+') as wf:
+        wf.write('#include <stdio.h>\n#include <stdlib.h>\n#include "j1.h"\n int main(int argc, char* argv[])\n{\n')
+        for instruction in ins:
+            wf.write('    ')
+            wf.write(desugar(instruction).pp_ll())
+            wf.write('\n')
+        wf.write('}')
 expected = [54, 24, 9, 10, 5, 0, 8, 12, 3, 3, 2, False, False, False, True, False, 4, 5, 3, 4]
 
 test_values = [    
@@ -355,6 +363,6 @@ test_values = [
     SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
     SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
 ]
-
-for index, value in enumerate(test_values):
-    print(desugar(value).pp_ll())
+pp_ll(test_values)
+# for index, value in enumerate(test_values):
+    # print(desugar(value).pp_ll())
