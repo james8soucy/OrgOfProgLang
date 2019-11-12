@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef enum {JNUMBER, JBOOL, JPRIM, JAPP, JIF, JCONS} JTag;
+typedef enum {JNUMBER, JBOOL, JPRIM, JAPP, JIF, JCONS, KRET, KIF, KAPP} JTag;
 
 //acts as a sort of interface
 typedef struct {JTag t;} JObj;
@@ -36,3 +36,15 @@ void pp_jIf(JIf* jI);
 typedef struct JCons { JObj o; JObj* l; struct JCons* r; } JCons;
 JCons* jCons(JObj* l, JCons* r);
 void pp_jCons(JCons* jC);
+
+typedef struct { JObj o;} KRet;
+KRet* kRet();
+void pp_kRet(KRet* kR);
+
+typedef struct { JObj o; JObj* t; JObj* f; JObj* k } KIf;
+KIf* kIf(JObj* tn, JObj* fn, JObj* k);
+void pp_kIf(KIf* kI);
+
+typedef struct { JObj o; JPrim func; JObj* args; JObj* k } KApp;
+KApp* kApp(JPrim func, JObj* args, JObj* k);
+void pp_kApp(KApp* kA);

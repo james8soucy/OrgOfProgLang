@@ -24,11 +24,21 @@ void pp_jObj(JObj* jO)
 	case JCONS:
 		pp_jCons((JCons*)jO);
 		break;
+	case KRET:
+		pp_kRet((KRet*)jO);
+		break;
+	case KIF:
+		pp_kIf((KIf*)jO);
+		break;
+	case KAPP:
+		pp_kApp((KApp*)jO);
+		break;
 	default:
 		printf("tag not found");
 		exit(1);
 	}
 }
+
 JNumber* jNumber(int n)
 {
 	JNumber* item = (JNumber*)malloc(sizeof(JNumber));
@@ -119,5 +129,55 @@ void pp_jCons(JCons* jC)
 	{
 		printf("NULL");
 	}
+	printf(")");
+}
+
+KRet* kRet()
+{
+	KRet* item = (KRet*)malloc(sizeof(KRet));
+	item->o.t = KRET;
+	return item;
+}
+void pp_kRet(KRet* kR)
+{
+	printf("KRet()");
+}
+KIf* kIf(JObj* tn, JObj* fn, JObj* k)
+{
+	KIf* item = (KIf*)malloc(sizeof(KIf));
+	item->o.t = KIF;
+	item->f = fn;
+	item->t = tn;
+	item->k = k;
+	return item;
+
+}
+void pp_kIf(KIf* kI)
+{
+	printf("KIf(");
+	pp_jObj(kI->t);
+	printf(", ");
+	pp_jObj(kI->f);
+	printf(", ");
+	pp_jObj(kI->k);
+	printf(")");
+}
+KApp* kApp(JPrim func, JObj* args, JObj* k)
+{
+	KApp* item = (KApp*)malloc(sizeof(KApp));
+	item->o.t = KAPP;
+	item->func = func;
+	item->args = args;
+	item->k = k;
+	return item;
+}
+void pp_kApp(KApp* kA)
+{
+	printf("KApp(");
+	pp_jPrim(&(kA->func));
+	printf(", ");
+	pp_jObj(kA->args);
+	printf(", ");
+	pp_jPrim((kA->k));
 	printf(")");
 }
