@@ -59,7 +59,15 @@ JBool* jBool(char b)
 }
 void pp_jBool(JBool* jB)
 {
-	printf("JBool(%c)", jB->b);
+	if (jB->b)
+	{
+		printf("JBool(true)");
+	}
+	else 
+	{
+		printf("JBool(false)");
+	}
+	
 }
 JPrim* jPrim(char p)
 {
@@ -162,11 +170,12 @@ void pp_kIf(KIf* kI)
 	pp_jObj(kI->k);
 	printf(")");
 }
-KApp* kApp(JPrim func, JObj* args, JObj* k)
+KApp* kApp(JPrim p, JObj* vargs, JObj* args, JObj* k)
 {
 	KApp* item = (KApp*)malloc(sizeof(KApp));
 	item->o.t = KAPP;
-	item->func = func;
+	item->p = p;
+	item->vargs = vargs;
 	item->args = args;
 	item->k = k;
 	return item;
@@ -174,10 +183,120 @@ KApp* kApp(JPrim func, JObj* args, JObj* k)
 void pp_kApp(KApp* kA)
 {
 	printf("KApp(");
-	pp_jPrim(&(kA->func));
+	pp_jPrim(&(kA->p));
+	printf(", ");
+	pp_jObj(kA->vargs);
 	printf(", ");
 	pp_jObj(kA->args);
 	printf(", ");
 	pp_jPrim((kA->k));
 	printf(")");
+}
+
+char is_true(JObj* o)
+{
+	if (o->t == JBOOL)
+	{
+		return ((JBool*)o)->b;
+	}
+	else
+	{
+		printf("value tested as bool is not of bool type\n");
+		return 0;
+	}
+}
+
+JObj* ck0(JObj* o)
+{
+	JObj* k = (JObj*)kRet();
+	while (1 == 1)
+	{
+		switch (o->t)
+		{
+		case JNUMBER:
+		{
+			switch (k->t)
+			{
+			case KRET:
+			{
+				return o;
+				break;
+			}
+			case KAPP:
+			{
+				if (((KApp*)k)->vargs == NULL)
+				{
+					((KApp*)k)->vargs = jCons(o, NULL);
+				}
+				else
+				{
+					JCons* temp = ((KApp*)k)->vargs;
+					while (temp->r != NULL)
+					{
+						temp = temp->r;
+					}
+					temp->r = jCons(o, NULL);
+				}
+				((KApp*)k)->args = ((JCons*)((KApp*)k)->args)->r;
+				if (((KApp*)k)->args == NULL)
+				{
+					o = delta(((KApp*)k)->p, ((KApp*)k)->vargs)
+				}
+				o = ((JCons*)((KApp*)k)->args)->l;
+			}
+			default:
+				printf("k tag not found\n");
+				exit(1);
+			}
+			break;
+		}
+		case JBOOL:
+		{
+			switch (k->t)
+			{
+			case KRET:
+			{
+				return o;
+				break;
+			}
+			case KIF:
+			{
+				KIf* temp = (KIf*)k;
+				if (is_true(o))
+				{
+					o = temp->t;
+				}
+				else
+				{
+					o = temp->f;
+				}
+				k = temp->k;
+				break;
+			}
+			default:
+				printf("k tag not found\n");
+				exit(1);
+			}
+			break;
+			break;
+		}
+		case JIF:
+		{
+			JIf* temp = (JIf*)o;
+			o = temp->cond;
+			k = kIf(temp->tn, temp->fn, k);
+			break;
+		}
+		case JAPP:
+		{
+			JApp* temp = (JApp*)o;
+			KApp* kA = kApp(temp->func, NULL, temp->args, k);
+			k = kA;
+			o = ((JCons*)temp->args)->l;
+		}
+		default:
+			printf("o tag not found\n");
+			exit(1);
+		}
+	}
 }

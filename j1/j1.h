@@ -41,10 +41,14 @@ typedef struct { JObj o;} KRet;
 KRet* kRet();
 void pp_kRet(KRet* kR);
 
-typedef struct { JObj o; JObj* t; JObj* f; JObj* k } KIf;
+typedef struct { JObj o; JObj* t; JObj* f; JObj* k; } KIf;
 KIf* kIf(JObj* tn, JObj* fn, JObj* k);
 void pp_kIf(KIf* kI);
 
-typedef struct { JObj o; JPrim func; JObj* args; JObj* k } KApp;
-KApp* kApp(JPrim func, JObj* args, JObj* k);
+typedef struct { JObj o; JPrim p; JObj* vargs; JObj* args; JObj* k; } KApp;
+KApp* kApp(JPrim p, JObj* vargs, JObj* args, JObj* k);
 void pp_kApp(KApp* kA);
+
+JObj* ck0(JObj* o);
+
+char is_true(JObj* o);
