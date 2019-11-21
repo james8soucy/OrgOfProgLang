@@ -4,6 +4,11 @@
 
 void pp_jObj(JObj* jO)
 {
+	if (jO == NULL)
+	{
+		printf("NULL");
+		return;
+	}
 	switch (jO->t)
 	{
 	case JNUMBER:
@@ -69,16 +74,17 @@ void pp_jBool(JBool* jB)
 	}
 	
 }
-JPrim* jPrim(char p)
+JPrim* jPrim(char p[2])
 {
 	JPrim* item = (JPrim*)malloc(sizeof(JPrim));
 	item->o.t = JPRIM;
-	item->p = p;
+	item->p[0] = p[0];
+	item->p[1] = p[1];
 	return item;
 }
 void pp_jPrim(JPrim* jP)
 {
-	printf("JPrim(%c)", jP->p);
+	printf("JPrim(%c)", jP->p[0]);
 }
 JApp* jApp(JPrim func, JObj* args)
 {
@@ -189,7 +195,7 @@ void pp_kApp(KApp* kA)
 	printf(", ");
 	pp_jObj(kA->args);
 	printf(", ");
-	pp_jPrim((kA->k));
+	pp_jObj((kA->k));
 	printf(")");
 }
 
@@ -211,6 +217,10 @@ JObj* ck0(JObj* o)
 	JObj* k = (JObj*)kRet();
 	while (1 == 1)
 	{
+		//pp_jObj(o);
+		//printf(", ");
+		//pp_jObj(k);
+		//printf("\n\n");
 		switch (o->t)
 		{
 		case JNUMBER:
@@ -239,10 +249,16 @@ JObj* ck0(JObj* o)
 				}
 				((KApp*)k)->args = ((JCons*)((KApp*)k)->args)->r;
 				if (((KApp*)k)->args == NULL)
+
 				{
-					o = delta(((KApp*)k)->p, ((KApp*)k)->vargs)
+					o = (JObj*)delta(((KApp*)k)->p, ((KApp*)k)->vargs);
+					k = ((KApp*)k)->k;
 				}
-				o = ((JCons*)((KApp*)k)->args)->l;
+				else
+				{
+					o = ((JCons*)((KApp*)k)->args)->l;
+				}
+				break;
 			}
 			default:
 				printf("k tag not found\n");
@@ -293,10 +309,113 @@ JObj* ck0(JObj* o)
 			KApp* kA = kApp(temp->func, NULL, temp->args, k);
 			k = kA;
 			o = ((JCons*)temp->args)->l;
+			break;
 		}
 		default:
 			printf("o tag not found\n");
 			exit(1);
 		}
+	}
+}
+
+JObj* delta(JPrim func, JCons* args)
+{
+	switch (func.p[0])
+	{
+	case '+':
+	{
+		int sum = 0;
+		while (args != NULL)
+		{
+			sum = sum + ((JNumber*)args->l)->n;
+			args = args->r;
+		}
+		JNumber* jSum = jNumber(sum);
+		return jSum;
+		break;
+	}
+	case '*':
+	{
+		int pro = 0;
+		while (args != NULL)
+		{
+			pro = pro * ((JNumber*)args->l)->n;
+			args = args->r;
+		}
+		JNumber* jPro = jNumber(pro);
+		return jPro;
+		break;
+	}
+	case '-':
+	{
+		int dif = 0;
+		while (args != NULL)
+		{
+			dif = dif - ((JNumber*)args->l)->n;
+			args = args->r;
+		}
+		JNumber* jDif = jNumber(dif);
+		return jDif;
+		break;
+	}
+	case '/':
+	{
+		int quo = 0;
+		while (args != NULL)
+		{
+			quo = quo / ((JNumber*)args->l)->n;
+			args = args->r;
+		}
+		JNumber* jQuo = jNumber(quo);
+		return jQuo;
+		break;
+	}
+	case '>':
+	{
+		switch (func.p[1])
+		{
+		case ' ':
+			return jBool(((JNumber*)args->l)->n > ((JNumber*)args->r->l)->n);
+			break;
+		case '=':
+			return jBool(((JNumber*)args->l)->n >= ((JNumber*)args->r->l)->n);
+			break;
+		default:
+			printf("primitive not recognized");
+			exit(1);
+			break;
+		}
+		
+	}
+	case '<':
+	{
+		switch (func.p[1])
+		{
+		case ' ':
+			return jBool(((JNumber*)args->l)->n < ((JNumber*)args->r->l)->n);
+			break;
+		case '=':
+			return jBool(((JNumber*)args->l)->n <= ((JNumber*)args->r->l)->n);
+			break;
+		default:
+			printf("primitive not recognized");
+			exit(1);
+			break;
+		}
+	}
+	case '=':
+	{
+		if (func.p[1] == '=')
+		{
+			return ((JNumber*)args->l)->n == ((JNumber*)args->r->l)->n;
+		}
+		printf("primitive not recognized");
+		exit(1);
+		break;
+	}
+	default:
+		printf("primitive not recognized");
+		exit(1);
+		break;
 	}
 }

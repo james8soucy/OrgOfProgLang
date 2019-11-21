@@ -18,8 +18,8 @@ JBool* jBool(char b);
 void pp_jBool(JBool* jB);
 
 // e::= v ::= prim
-typedef struct {JObj o; char p;} JPrim;
-JPrim* jPrim(char p);
+typedef struct {JObj o; char p[2];} JPrim;
+JPrim* jPrim(char p[2]);
 void pp_jPrim(JPrim* jP);
 
 // e::= (e e ...)
@@ -52,3 +52,5 @@ void pp_kApp(KApp* kA);
 JObj* ck0(JObj* o);
 
 char is_true(JObj* o);
+
+JObj* delta(JPrim func, JCons* args);
