@@ -84,7 +84,12 @@ JPrim* jPrim(char p[2])
 }
 void pp_jPrim(JPrim* jP)
 {
-	printf("JPrim(%c)", jP->p[0]);
+	printf("JPrim(%c", jP->p[0]);
+	if (jP->p[1] != ' ')
+	{
+		printf("%c", jP->p[1]);
+	}
+	printf(")");
 }
 JApp* jApp(JPrim func, JObj* args)
 {
@@ -249,7 +254,6 @@ JObj* ck0(JObj* o)
 				}
 				((KApp*)k)->args = ((JCons*)((KApp*)k)->args)->r;
 				if (((KApp*)k)->args == NULL)
-
 				{
 					o = (JObj*)delta(((KApp*)k)->p, ((KApp*)k)->vargs);
 					k = ((KApp*)k)->k;
@@ -336,7 +340,7 @@ JObj* delta(JPrim func, JCons* args)
 	}
 	case '*':
 	{
-		int pro = 0;
+		int pro = 1;
 		while (args != NULL)
 		{
 			pro = pro * ((JNumber*)args->l)->n;
@@ -348,7 +352,12 @@ JObj* delta(JPrim func, JCons* args)
 	}
 	case '-':
 	{
-		int dif = 0;
+		if (args->r == NULL)
+		{
+			return -1 * ((JNumber*)args->l)->n;
+		}
+		int dif = ((JNumber*)args->l)->n;
+		args = args->r;
 		while (args != NULL)
 		{
 			dif = dif - ((JNumber*)args->l)->n;
@@ -360,7 +369,8 @@ JObj* delta(JPrim func, JCons* args)
 	}
 	case '/':
 	{
-		int quo = 0;
+		int quo = ((JNumber*)args->l)->n;
+		args = args->r;
 		while (args != NULL)
 		{
 			quo = quo / ((JNumber*)args->l)->n;
@@ -407,7 +417,7 @@ JObj* delta(JPrim func, JCons* args)
 	{
 		if (func.p[1] == '=')
 		{
-			return ((JNumber*)args->l)->n == ((JNumber*)args->r->l)->n;
+			return jBool(((JNumber*)args->l)->n == ((JNumber*)args->r->l)->n);
 		}
 		printf("primitive not recognized");
 		exit(1);

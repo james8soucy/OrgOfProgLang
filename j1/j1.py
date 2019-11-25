@@ -53,7 +53,10 @@ class JPrim:
     def pp(self):
         return str(self.p)
     def pp_ll(self):
-        return "jPrim(" + "'" + self.p + "')"
+        if len(self.p) == 1:
+            return 'jPrim(' + '"' + self.p + ' ")'
+        else:
+            return 'jPrim(' + '"' + self.p + '")'
     def interp(self):
         return self
 class JApp:
@@ -331,21 +334,33 @@ def delta(JA):
         return JBool(JA.args[0].interp().n != JA.args[1].interp().n)
 
 def pp_ll(ins):
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out.c'), 'w+') as wf:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test.c'), 'w+') as wf:
         wf.write('#include <stdio.h>\n#include <stdlib.h>\n#include "j1.h"\n int main(int argc, char* argv[])\n{\n')
-        for instruction in ins:
+        for i,instruction in enumerate(ins):
             wf.write('    ')
-            wf.write(desugar(instruction).pp_ll())
-            wf.write('\n')
+            des_ins = desugar(instruction)
+            if type(des_ins) == JNumber:
+                wf.write('JNumber* ')
+            elif type(des_ins) == JBool:
+                wf.write('JBool* ')
+            elif type(des_ins) == JIf:
+                wf.write('JIf* ')
+            elif type(des_ins) == JApp:
+                wf.write('JApp* ')
+            wf.write('var' + str(i) + ' = ')
+            wf.write(des_ins.pp_ll())
+            wf.write(';\n')
+            wf.write('    pp_jObj(ck0(' + 'var' + str(i) + '));\n')
+            wf.write('    printf("\\n");\n')
         wf.write('}')
+        
 expected = [54, 24, 9, 10, 5, 0, 8, 12, 3, 3, 2, False, False, False, True, False, 4, 5, 3, 4]
 
 test_values = [    
     SeNum(54),
     SApp(SeStr('*'), SeNum(4), SeNum(6)),
     SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeNum(2), SeEmp()))), SeEmp()))),
-    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeNum(1), SeEmp()))), SeEmp()))), SeEmp())))
-    ,
+    SeCons(SeStr('+'), SeCons(SeNum(4), SeCons(SeCons(SeStr('+'), SeCons(SeNum(3), SeCons(SeCons(SeStr('+'), SeCons(SeNum(2), SeCons(SeNum(1), SeEmp()))), SeEmp()))), SeEmp()))),
     SApp(SeStr('+'), SApp(SeStr('*'), SeNum(2), SeNum(2)), SApp(SeStr('-'), SeNum(2), SeNum(1))),
     SeCons(SeStr('+'), SeEmp()),
     SeCons(SeStr('+'), SeCons(SeNum(8), SeEmp())),
