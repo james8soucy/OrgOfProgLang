@@ -29,6 +29,15 @@ void pp_jObj(JObj* jO)
 	case JCONS:
 		pp_jCons((JCons*)jO);
 		break;
+	case JVAR:
+		pp_jVar((JVar*)jO);
+		break;
+	case JFUNC:
+		pp_jFunc((JFunc*)jO);
+		break;
+	case JDEF:
+		pp_jDefine((JDefine*)jO);
+		break;
 	case KRET:
 		pp_kRet((KRet*)jO);
 		break;
@@ -150,7 +159,51 @@ void pp_jCons(JCons* jC)
 	}
 	printf(")");
 }
+JVar* jVar(char* name)
+{
+	JVar* item = (JVar*)malloc(sizeof(JVar));
+	item->o.t = JVAR;
+	item->name = name;
+	return item;
+}
+void pp_jVar(JVar* jV)
+{
+	printf("JVar(%s", jV->name);
+	printf(")");
+}
 
+JFunc* jFunc(char* name, JObj* args)
+{
+	JFunc* item = (JFunc*)malloc(sizeof(JFunc));
+	item->o.t = JFUNC;
+	item->name = name;
+	item->args = args;
+	return item;
+}
+void pp_jFunc(JFunc* jF)
+{
+	printf("JFunc(%s", jF->name);
+	printf(", ");
+	pp_jObj(jF->args);
+	printf(")");
+}
+
+JDefine* jDefine(JFunc* func, JObj* body)
+{
+	JDefine* item = (JDefine*)malloc(sizeof(JDefine));
+	item->o.t = JDEF;
+	item->func = func;
+	item->body = body;
+	return item;
+}
+void pp_jDefine(JDefine* jD)
+{
+	printf("JDefine(");
+	pp_jObj(jD->func);
+	printf(", ");
+	pp_jObj(jD->body);
+	printf(")");
+}
 KRet* kRet()
 {
 	KRet* item = (KRet*)malloc(sizeof(KRet));
