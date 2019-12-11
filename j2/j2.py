@@ -401,7 +401,15 @@ test_values = [
     SIf(SeStr(False), SeNum(4), SeNum(5)),
     SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
     SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))
-    SDef('DOUBLE', )
+    SDef('DOUBLE', SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeVar('x')))
+    SFunc('DOUBLE', SeCons(SeNum(4), SeEmp()))
+    SDef('QUAD', SeCons(SeVar('x'), SeEmp()), SFunc('DOUBLE', SFunc('DOUBLE', SeVar('x'))))
+    SFunc('QUAD', SeCons(SeNum(4), SeEmp()))
+    SDef('COUNTDOWN', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWN', SeCons(SApp(SeStr('-'), SeVar('x'), SeNum(1)), SeEmp()))))
+    SFunc('COUNTDOWN', SeCons(SeNum(3), SeEmp()))
+    SDef('COUNTDOWN1', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWN2', SeCons(SApp(SeStr('-'), SeVar('x'), SeNum(2)), SeEmp()))))
+    SDef('COUNTDOWN2', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWN1', SeCons(SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeEmp()))))
+    SFunc('COUNTDOWN1', SeCons(SeNum(5), SeEmp()))
 ]
 pp_ll(test_values)
 # for index, value in enumerate(test_values):
