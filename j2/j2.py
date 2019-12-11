@@ -90,11 +90,12 @@ class JFunc:
     def pp(self):
         return 'JFunc(' + self.name + ', ' + self.args.pp() + ')'
 class JDefine:
-    def __init__(self, func, body):
+    def __init__(self, func, args, body):
         self.func = func
+        self.args = args
         self.body = body
     def pp(self):
-        return 'JDefine(' + self.func.pp() + ', ' + self.body.pp() + ')'
+        return 'JDefine(' + self.func.pp() + ', ' + self.args.pp() + ', ' + self.body.pp() + ')'
         
 class SeStr:
     def __init__(self, s):
@@ -109,6 +110,10 @@ class SeCons:
     def __init__(self, l, r):
         self.l = l
         self.r = r
+        
+class SeVar:
+    def __init__(self, name):
+        self.name = name
 
 #C := hole | (if C e e) | (e ... C ... e)
 class CHole:
@@ -261,6 +266,13 @@ def SApp(op, l, r):
 def SIf(cond, tn, fn):
     return SeCons(SeStr('if'), SeCons(cond, SeCons(tn, SeCons(fn, SeEmp()))))
     
+def SDef(func, args, body):
+    return SeCons(SeStr('define'), SeCons(SeStr(func)), SeCons(args, SeCons(body, SeEmp())))
+
+def SFunc(func, args):
+    return SeCons(SeStr(func), SeCons(args, SeEmp()))
+
+    
 def find_redex(jexpr):
     #CHole
     if type(jexpr) in [JNumber, JBool, JPrim]:
@@ -388,7 +400,8 @@ test_values = [
     SIf(SeStr(True), SeNum(4), SeNum(5)),
     SIf(SeStr(False), SeNum(4), SeNum(5)),
     SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
-    SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))   
+    SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))
+    SDef('DOUBLE', )
 ]
 pp_ll(test_values)
 # for index, value in enumerate(test_values):

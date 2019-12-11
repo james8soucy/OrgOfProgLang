@@ -45,8 +45,8 @@ typedef struct JFunc { JObj o; char* name; JObj* args; } JFunc;
 JFunc* jFunc(char* name, JObj* args);
 void pp_jFunc(JFunc* jF);
 
-typedef struct JDefine { JObj o; JFunc* func; JObj* body; } JDefine;
-JDefine* jDefine(JFunc* func, JObj* body);
+typedef struct JDefine { JObj o; JFunc* func; JCons* args; JObj* body; } JDefine;
+JDefine* jDefine(JFunc* func, JCons* args, JObj* body);
 void pp_jDefine(JDefine* jD);
 
 

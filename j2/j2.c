@@ -188,11 +188,12 @@ void pp_jFunc(JFunc* jF)
 	printf(")");
 }
 
-JDefine* jDefine(JFunc* func, JObj* body)
+JDefine* jDefine(JFunc* func, JCons* args, JObj* body)
 {
 	JDefine* item = (JDefine*)malloc(sizeof(JDefine));
 	item->o.t = JDEF;
 	item->func = func;
+	item->args = args;
 	item->body = body;
 	return item;
 }
@@ -200,6 +201,8 @@ void pp_jDefine(JDefine* jD)
 {
 	printf("JDefine(");
 	pp_jObj(jD->func);
+	printf(", ");
+	pp_jObj(jD->args);
 	printf(", ");
 	pp_jObj(jD->body);
 	printf(")");
