@@ -10,6 +10,8 @@ class JNumber:
         return 'jNumber(' + str(self.n) + ')'
     def interp(self):
         return self
+    def sub(self, var, arg):
+        return self
 class JEmp:
     def __init__(self):
         pass
@@ -34,6 +36,8 @@ class JIf:
             return self.tn.interp()
         else:
             return self.fn.interp()
+    def sub(self, var, arg):
+        return JIf(self.cond.sub(var, arg), self.tn.sub(var, arg), self.fn.sub(var, arg))
 class JBool:
     def __init__(self, b):
         self.b = b
@@ -42,6 +46,8 @@ class JBool:
     def pp_ll(self):
         return 'jBool(' + str(int(self.b)) + ')' 
     def interp(self):
+        return self
+    def sub(self, var, arg):
         return self
 class JPrim:
     def __init__(self, p):
@@ -54,6 +60,8 @@ class JPrim:
         else:
             return 'jPrim(' + '"' + self.p + '")'
     def interp(self):
+        return self
+    def sub(self, var, arg):
         return self
 class JApp:
     def __init__(self, func, args):
@@ -68,7 +76,7 @@ class JApp:
     def pp_ll(self):
         retstr = 'jApp(*' + self.func.pp_ll() + ', '
         rettail = ')'
-        for i, arg in enumerate(self.args):
+        for i, arg in enumerate(self.args): 
             if i + 1 < len(self.args):
                 retstr = retstr + 'jCons(' + arg.pp_ll() + ', '
                 rettail = rettail + ')'
@@ -78,11 +86,17 @@ class JApp:
         return retstr + rettail 
     def interp(self):
         return delta(self)
+    def sub(self, var, arg):
+        return JApp(self.func, [argument.sub(var, arg) for argument in self.args])
 class JVar:
     def __init__(self, name):
         self.name = name
     def pp(self):
         return 'JVar(' + self.name + ')'
+    def sub(self, var, arg):
+        if (var.name == self.name):
+            return arg
+        return self
 class JFunc:
     def __init__(self, name, args):
         self.name = name
