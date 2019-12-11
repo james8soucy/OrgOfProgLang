@@ -1,6 +1,8 @@
 import copy #needed for temp arrays
 import os #needed for pathing
 
+sigma_table = {}
+
 class JNumber:
     def __init__(self, n):
         self.n = n
@@ -102,14 +104,24 @@ class JFunc:
         self.name = name
         self.args = args
     def pp(self):
-        return 'JFunc(' + self.name + ', ' + self.args.pp() + ')'
+        retstr = 'JFunc(' + self.name + ', ['
+        for arg in self.args:
+            retstr = retstr + arg.pp()
+        retstr = retstr + '])'
+        return retstr
 class JDefine:
     def __init__(self, func, args, body):
         self.func = func
         self.args = args
         self.body = body
     def pp(self):
-        return 'JDefine(' + self.func.pp() + ', ' + self.args.pp() + ', ' + self.body.pp() + ')'
+        retstr = 'JDefine(' + self.func + ', ['
+        for arg in self.args:
+            retstr = retstr + arg.pp()
+        retstr = retstr + '], ' + self.body.pp() + ')'
+        return retstr
+    def interp(self):
+        sigma_table[sexpr.r.l.s] = {'args':sexpr.r.r.l, 'body':sexpr.r.r.r.l}
         
 class SeStr:
     def __init__(self, s):
@@ -247,6 +259,23 @@ def CCinterp(jexpr):
     return state.c.plug(state.j)
 
 def desugar(sexpr):
+    # e = x
+    if isinstance(sexpr, SeVar):
+        return JVar(sexpr.name)
+    # e = (x ...)
+    if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeVar):
+        args = [JVar(sexpr.l.name)]
+        while not isinstance(sexpr.r, SeEmp):
+            sexpr = sexpr.r
+            args.append(JVar(sexpr.l.name))
+        return args    
+    # e = (e ...)
+    if isinstance(sexpr, SeCons) and not isinstance(sexpr.l, SeStr):
+        args = [desugar(sexpr.l)]
+        while not isinstance(sexpr.r, SeEmp):
+            sexpr = sexpr.r
+            args.append(desugar(sexpr.l))
+        return args         
     # e = v
     if isinstance(sexpr, SeNum):
         return JNumber(sexpr.n)
@@ -260,6 +289,12 @@ def desugar(sexpr):
             tempS = tempS.r
             args.append(desugar(tempS.l))
         return JApp(JPrim(sexpr.l.s), args)
+    # d = (define (f x ...) e)
+    if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == 'DEFINE':
+        return JDefine(sexpr.r.l.s, desugar(sexpr.r.r.l), desugar(sexpr.r.r.r.l))
+    # f = function in sigma table
+    if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and all([c.isupper() for c in sexpr.l.s]):
+        return JFunc(sexpr.l.s, desugar(sexpr.r.l))
     # e = (e e ...)
     if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and isinstance(sexpr.r, SeCons) and isinstance(sexpr.r.r, SeCons) and isinstance(sexpr.r.r.r, SeEmp):
         return JApp(JPrim(sexpr.l.s), [desugar(sexpr.r.l), desugar(sexpr.r.r.l)])
@@ -272,6 +307,7 @@ def desugar(sexpr):
     # e = (*)
     if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == '*' and isinstance(sexpr.r, SeEmp)):
         return JNumber(1)
+    print(sexpr)
     return 'case error'
 
 def SApp(op, l, r):
@@ -281,7 +317,7 @@ def SIf(cond, tn, fn):
     return SeCons(SeStr('if'), SeCons(cond, SeCons(tn, SeCons(fn, SeEmp()))))
     
 def SDef(func, args, body):
-    return SeCons(SeStr('define'), SeCons(SeStr(func)), SeCons(args, SeCons(body, SeEmp())))
+    return SeCons(SeStr('DEFINE'), SeCons(SeStr(func), SeCons(args, SeCons(body, SeEmp()))))
 
 def SFunc(func, args):
     return SeCons(SeStr(func), SeCons(args, SeEmp()))
@@ -414,17 +450,16 @@ test_values = [
     SIf(SeStr(True), SeNum(4), SeNum(5)),
     SIf(SeStr(False), SeNum(4), SeNum(5)),
     SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
-    SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3))
-    SDef('DOUBLE', SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeVar('x')))
-    SFunc('DOUBLE', SeCons(SeNum(4), SeEmp()))
-    SDef('QUAD', SeCons(SeVar('x'), SeEmp()), SFunc('DOUBLE', SFunc('DOUBLE', SeVar('x'))))
-    SFunc('QUAD', SeCons(SeNum(4), SeEmp()))
-    SDef('COUNTDOWN', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWN', SeCons(SApp(SeStr('-'), SeVar('x'), SeNum(1)), SeEmp()))))
-    SFunc('COUNTDOWN', SeCons(SeNum(3), SeEmp()))
-    SDef('COUNTDOWN1', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWN2', SeCons(SApp(SeStr('-'), SeVar('x'), SeNum(2)), SeEmp()))))
-    SDef('COUNTDOWN2', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWN1', SeCons(SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeEmp()))))
-    SFunc('COUNTDOWN1', SeCons(SeNum(5), SeEmp()))
+    SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3)),
+    SDef('DOUBLE', SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeVar('x'))),
+    SFunc('DOUBLE', SeCons(SeNum(4), SeEmp())),
+    SDef('QUAD', SeCons(SeVar('x'), SeEmp()), SFunc('DOUBLE', SeCons(SFunc('DOUBLE', SeCons(SeVar('x'), SeEmp())), SeEmp()))),
+    SFunc('QUAD', SeCons(SeNum(4), SeEmp())),
+    SDef('COUNTDOWN', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWN', SeCons(SApp(SeStr('-'), SeVar('x'), SeNum(1)), SeEmp())))),
+    SFunc('COUNTDOWN', SeCons(SeNum(3), SeEmp())),
+    SDef('COUNTDOWNONE', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWNTWO', SeCons(SApp(SeStr('-'), SeVar('x'), SeNum(2)), SeEmp())))),
+    SDef('COUNTDOWNTWO', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWNONE', SeCons(SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeEmp())))),
+    SFunc('COUNTDOWNONE', SeCons(SeNum(5), SeEmp()))
 ]
-pp_ll(test_values)
-# for index, value in enumerate(test_values):
-    # print(desugar(value).pp_ll())
+for index, value in enumerate(test_values):
+    print(desugar(value).pp())
