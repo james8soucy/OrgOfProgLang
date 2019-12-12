@@ -99,6 +99,8 @@ class JVar:
         if (var.name == self.name):
             return arg
         return self
+    def interp(self):
+        return self
 class JFunc:
     def __init__(self, name, args):
         self.name = name
@@ -109,6 +111,17 @@ class JFunc:
             retstr = retstr + arg.pp()
         retstr = retstr + '])'
         return retstr
+    def interp(self):
+        if self.name in sigma_table.keys():
+            if len(self.args) == len(sigma_table[self.name]['args']):
+                result = sigma_table[self.name]['body']
+                print(result.pp())
+                for i, arg in enumerate(sigma_table[self.name]['args']):
+                    result = result.sub(arg, self.args[i])
+                print(result.pp())
+                return result.interp()
+            return 'argument error: ' + self.name + ' requires ' + len(sigma_table[self.name]['args']) + ' arguments, ' + len(self.args) + ' given'    
+        return 'error - function not defined'
 class JDefine:
     def __init__(self, func, args, body):
         self.func = func
@@ -121,7 +134,8 @@ class JDefine:
         retstr = retstr + '], ' + self.body.pp() + ')'
         return retstr
     def interp(self):
-        sigma_table[sexpr.r.l.s] = {'args':sexpr.r.r.l, 'body':sexpr.r.r.r.l}
+        sigma_table[self.func] = {'args':self.args, 'body':self.body}
+        return JEmp()
         
 class SeStr:
     def __init__(self, s):
@@ -462,4 +476,5 @@ test_values = [
     SFunc('COUNTDOWNONE', SeCons(SeNum(5), SeEmp()))
 ]
 for index, value in enumerate(test_values):
-    print(desugar(value).pp())
+    desugar(value).interp()
+    # print(desugar(value).pp(), desugar(value).interp().pp())
