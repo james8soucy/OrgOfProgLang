@@ -115,13 +115,18 @@ class JFunc:
         if self.name in sigma_table.keys():
             if len(self.args) == len(sigma_table[self.name]['args']):
                 result = sigma_table[self.name]['body']
-                print(result.pp())
+                # print(self.pp())
+                # print(result.pp())
                 for i, arg in enumerate(sigma_table[self.name]['args']):
                     result = result.sub(arg, self.args[i])
-                print(result.pp())
+                # print(result.pp())
+                # print(type(result))
+                # print('\n')
                 return result.interp()
             return 'argument error: ' + self.name + ' requires ' + len(sigma_table[self.name]['args']) + ' arguments, ' + len(self.args) + ' given'    
         return 'error - function not defined'
+    def sub(self, var, arg):
+        return JFunc(self.name, [argument.sub(var, arg) for argument in self.args])
 class JDefine:
     def __init__(self, func, args, body):
         self.func = func
@@ -476,5 +481,4 @@ test_values = [
     SFunc('COUNTDOWNONE', SeCons(SeNum(5), SeEmp()))
 ]
 for index, value in enumerate(test_values):
-    desugar(value).interp()
-    # print(desugar(value).pp(), desugar(value).interp().pp())
+    print(desugar(value).pp(), desugar(value).interp().pp())
