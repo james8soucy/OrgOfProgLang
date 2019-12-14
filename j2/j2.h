@@ -78,3 +78,5 @@ JObj* ck0(JObj* o);
 char is_true(JObj* o);
 
 JObj* delta(JPrim* func, JCons* args);
+
+JObj* sigma(JFunc* func, JCons* args);

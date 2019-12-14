@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "j2.h"
 
+JCons* sigma_table;
+
 void pp_jObj(JObj* jO)
 {
 	if (jO == NULL)
@@ -305,7 +307,7 @@ KApp* kApp(JObj* p, JObj* vargs, JObj* args, JObj* k)
 void pp_kApp(KApp* kA)
 {
 	printf("KApp(");
-	pp_jPrim((kA->p));
+	pp_jObj((kA->p));
 	printf(", ");
 	pp_jObj(kA->vargs);
 	printf(", ");
@@ -328,15 +330,15 @@ char is_true(JObj* o)
 	}
 }
 
-JObj* ck0(JObj* o)
+JObj* ck1(JObj* o)
 {
 	JObj* k = (JObj*)kRet();
 	while (1 == 1)
 	{
-		//pp_jObj(o);
-		//printf(", ");
-		//pp_jObj(k);
-		//printf("\n\n");
+		pp_jObj(o);
+		printf(", ");
+		pp_jObj(k);
+		printf("\n\n");
 		switch (o->t)
 		{
 		case JNUMBER:
@@ -364,9 +366,14 @@ JObj* ck0(JObj* o)
 					temp->r = jCons(o, NULL);
 				}
 				((KApp*)k)->args = ((JCons*)((KApp*)k)->args)->r;
-				if (((KApp*)k)->args == NULL)
+				if (((KApp*)k)->args == NULL && ((KApp*)k)->p->t == JPRIM)
 				{
 					o = (JObj*)delta(((KApp*)k)->p, ((KApp*)k)->vargs);
+					k = ((KApp*)k)->k;
+				}
+				else if (((KApp*)k)->args == NULL && ((KApp*)k)->p->t == JFUNC)
+				{
+					o = (JObj*)sigma(((KApp*)k)->p, ((KApp*)k)->vargs);
 					k = ((KApp*)k)->k;
 				}
 				else
@@ -424,6 +431,24 @@ JObj* ck0(JObj* o)
 			KApp* kA = kApp(temp->func, NULL, temp->args, k);
 			k = kA;
 			o = ((JCons*)temp->args)->l;
+			break;
+		}
+		case JDEF:
+		{
+			if (sigma_table == NULL)
+			{
+				sigma_table = jCons(jCons(((JDefine*)o)->func, jCons(((JDefine*)o)->args, jCons(((JDefine*)o)->body, NULL))), NULL);
+			}
+			else
+			{
+				JCons* temp = sigma_table;
+				while (temp != NULL)
+				{
+					temp = temp->r;
+				}
+				temp = jCons(jCons(((JDefine*)o)->func, jCons(((JDefine*)o)->args, jCons(((JDefine*)o)->body, NULL))), NULL);
+				return jBool(1);
+			}
 			break;
 		}
 		default:
@@ -539,4 +564,26 @@ JObj* delta(JPrim* func, JCons* args)
 		exit(1);
 		break;
 	}
+}
+JObj* sigma(JFunc* func, JCons* args)
+{
+	JCons* temp = sigma_table;
+
+	pp_jObj(temp);
+
+	while (temp != NULL && ((JFunc*)((JCons*)temp->l)->l)->name != func->name)
+	{
+		temp = temp->r;
+	}
+
+	JObj* body = (JObj*)((JCons*)temp->l)->r->r->l;
+	JCons* temp_vars = ((JCons*)temp->l)->r->l;
+	JCons* temp_args = args;
+	while (temp_vars != NULL)
+	{
+		body = sub_jObj(body, temp_vars->l, temp_args->l);
+		temp_vars = temp_vars->r;
+		temp_args = temp_args->r;
+	}
+	return body;
 }
