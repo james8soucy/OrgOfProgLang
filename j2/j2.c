@@ -52,13 +52,48 @@ void pp_jObj(JObj* jO)
 		exit(1);
 	}
 }
-
+JObj* sub_jObj(JObj* jO_s, JVar* jV, JObj* jO)
+{
+	if (jO_s == NULL)
+	{
+		printf("NULL");
+		return;
+	}
+	switch (jO_s->t)
+	{
+	case JNUMBER:
+		sub_jNumber((JNumber*)jO_s, jV, jO);
+		break;
+	case JBOOL:
+		sub_jBool((JBool*)jO_s, jV, jO);
+		break;
+	case JAPP:
+		sub_jApp((JApp*)jO_s, jV, jO);
+		break;
+	case JIF:
+		sub_jIf((JIf*)jO_s, jV, jO);
+		break;
+	case JCONS:
+		sub_jCons((JCons*)jO_s, jV, jO);
+		break;
+	case JVAR:
+		sub_jVar((JVar*)jO_s, jV, jO);
+		break;
+	default:
+		printf("tag not found");
+		exit(1);
+	}
+}
 JNumber* jNumber(int n)
 {
 	JNumber* item = (JNumber*)malloc(sizeof(JNumber));
 	item->o.t = JNUMBER;
 	item->n = n;
 	return item;
+}
+JNumber* sub_jNumber(JNumber* jN, JVar* jV, JObj* jO)
+{
+	return jN;
 }
 void pp_jNumber(JNumber* jN)
 {
@@ -83,6 +118,10 @@ void pp_jBool(JBool* jB)
 	}
 	
 }
+JBool* sub_jBool(JBool* jB, JVar* jV, JObj* jO)
+{
+	return jB;
+}
 JPrim* jPrim(char p[2])
 {
 	JPrim* item = (JPrim*)malloc(sizeof(JPrim));
@@ -100,7 +139,7 @@ void pp_jPrim(JPrim* jP)
 	}
 	printf(")");
 }
-JApp* jApp(JPrim func, JObj* args)
+JApp* jApp(JObj* func, JObj* args)
 {
 	JNumber* test = ((JNumber*)args);
 	JApp* item = (JApp*)malloc(sizeof(JApp));
@@ -112,10 +151,14 @@ JApp* jApp(JPrim func, JObj* args)
 void pp_jApp(JApp* jA)
 {
 	printf("JApp(");
-	pp_jPrim(&(jA->func));
+	pp_jObj((jA->func));
 	printf(", ");
 	pp_jObj(jA->args);
 	printf(")");
+}
+JApp* sub_jApp(JApp* jA, JVar* jV, JObj* jO)
+{
+	return jApp(jA->func, sub_jCons(jA->args, jV, jO));
 }
 JIf* jIf(JObj* cond, JObj* tn, JObj* fn)
 {
@@ -135,6 +178,10 @@ void pp_jIf(JIf* jI)
 	printf(", ");
 	pp_jObj(jI->fn);
 	printf(")");
+}
+JIf* sub_jIf(JIf* jI, JVar* jV, JObj* jO)
+{
+	return jIf(sub_jObj(jI->cond, jV, jO), sub_jObj(jI->tn, jV, jO), sub_jObj(jI->fn, jV, jO));
 }
 JCons* jCons(JObj* l, JCons* r)
 {
@@ -159,6 +206,10 @@ void pp_jCons(JCons* jC)
 	}
 	printf(")");
 }
+JCons* sub_jCons(JCons* jC, JVar* jV, JObj* jO)
+{
+	return jCons(sub_jObj(jC->l, jV, jO), sub_JCons(jC->r, jV, jO));
+}
 JVar* jVar(char* name)
 {
 	JVar* item = (JVar*)malloc(sizeof(JVar));
@@ -171,20 +222,24 @@ void pp_jVar(JVar* jV)
 	printf("JVar(%s", jV->name);
 	printf(")");
 }
-
-JFunc* jFunc(char* name, JObj* args)
+JObj* sub_jVar(JVar* jV_s, JVar* jV, JObj* jO)
+{
+	if (jV_s->name == jV->name)
+	{
+		return jO;
+	}
+	return jV_s;
+}
+JFunc* jFunc(char* name)
 {
 	JFunc* item = (JFunc*)malloc(sizeof(JFunc));
 	item->o.t = JFUNC;
 	item->name = name;
-	item->args = args;
 	return item;
 }
 void pp_jFunc(JFunc* jF)
 {
 	printf("JFunc(%s", jF->name);
-	printf(", ");
-	pp_jObj(jF->args);
 	printf(")");
 }
 
@@ -237,7 +292,7 @@ void pp_kIf(KIf* kI)
 	pp_jObj(kI->k);
 	printf(")");
 }
-KApp* kApp(JPrim p, JObj* vargs, JObj* args, JObj* k)
+KApp* kApp(JObj* p, JObj* vargs, JObj* args, JObj* k)
 {
 	KApp* item = (KApp*)malloc(sizeof(KApp));
 	item->o.t = KAPP;
@@ -250,7 +305,7 @@ KApp* kApp(JPrim p, JObj* vargs, JObj* args, JObj* k)
 void pp_kApp(KApp* kA)
 {
 	printf("KApp(");
-	pp_jPrim(&(kA->p));
+	pp_jPrim((kA->p));
 	printf(", ");
 	pp_jObj(kA->vargs);
 	printf(", ");
@@ -378,9 +433,9 @@ JObj* ck0(JObj* o)
 	}
 }
 
-JObj* delta(JPrim func, JCons* args)
+JObj* delta(JPrim* func, JCons* args)
 {
-	switch (func.p[0])
+	switch (func->p[0])
 	{
 	case '+':
 	{
@@ -438,7 +493,7 @@ JObj* delta(JPrim func, JCons* args)
 	}
 	case '>':
 	{
-		switch (func.p[1])
+		switch (func->p[1])
 		{
 		case ' ':
 			return jBool(((JNumber*)args->l)->n > ((JNumber*)args->r->l)->n);
@@ -455,7 +510,7 @@ JObj* delta(JPrim func, JCons* args)
 	}
 	case '<':
 	{
-		switch (func.p[1])
+		switch (func->p[1])
 		{
 		case ' ':
 			return jBool(((JNumber*)args->l)->n < ((JNumber*)args->r->l)->n);
@@ -471,7 +526,7 @@ JObj* delta(JPrim func, JCons* args)
 	}
 	case '=':
 	{
-		if (func.p[1] == '=')
+		if (func->p[1] == '=')
 		{
 			return jBool(((JNumber*)args->l)->n == ((JNumber*)args->r->l)->n);
 		}

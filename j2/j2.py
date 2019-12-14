@@ -115,13 +115,8 @@ class JFunc:
         if self.name in sigma_table.keys():
             if len(self.args) == len(sigma_table[self.name]['args']):
                 result = sigma_table[self.name]['body']
-                # print(self.pp())
-                # print(result.pp())
                 for i, arg in enumerate(sigma_table[self.name]['args']):
                     result = result.sub(arg, self.args[i])
-                # print(result.pp())
-                # print(type(result))
-                # print('\n')
                 return result.interp()
             return 'argument error: ' + self.name + ' requires ' + len(sigma_table[self.name]['args']) + ' arguments, ' + len(self.args) + ' given'    
         return 'error - function not defined'
