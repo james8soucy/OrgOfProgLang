@@ -76,7 +76,7 @@ class JApp:
         retstr = retstr + "])"
         return retstr
     def pp_ll(self):
-        retstr = 'jApp(*' + self.func.pp_ll() + ', '
+        retstr = 'jApp(' + self.func.pp_ll() + ', '
         rettail = ')'
         for i, arg in enumerate(self.args): 
             if i + 1 < len(self.args):
@@ -101,6 +101,8 @@ class JVar:
         return self
     def interp(self):
         return self
+    def pp_ll(self):
+        return 'jVar("' + self.name + '")'
 class JFunc:
     def __init__(self, name, args):
         self.name = name
@@ -122,6 +124,17 @@ class JFunc:
         return 'error - function not defined'
     def sub(self, var, arg):
         return JFunc(self.name, [argument.sub(var, arg) for argument in self.args])
+    def pp_ll(self):
+        retstr = 'jApp(jFunc("' + self.name + '"), '
+        rettail = ')'
+        for i, arg in enumerate(self.args): 
+            if i + 1 < len(self.args):
+                retstr = retstr + 'jCons(' + arg.pp_ll() + ', '
+                rettail = rettail + ')'
+            else:
+                retstr = retstr + 'jCons(' + arg.pp_ll() + ', ' + JEmp().pp_ll()
+                rettail = rettail + ')'
+        return retstr + rettail 
 class JDefine:
     def __init__(self, func, args, body):
         self.func = func
@@ -136,6 +149,17 @@ class JDefine:
     def interp(self):
         sigma_table[self.func] = {'args':self.args, 'body':self.body}
         return JEmp()
+    def pp_ll(self):
+        retstr = 'jDefine(jFunc("' + self.func + '"), '
+        rettail = ''
+        for i, arg in enumerate(self.args): 
+            if i + 1 < len(self.args):
+                retstr = retstr + 'jCons(' + arg.pp_ll() + ', '
+                rettail = rettail + ')'
+            else:
+                retstr = retstr + 'jCons(' + arg.pp_ll() + ', ' + JEmp().pp_ll()
+                rettail = rettail + ')'
+        return retstr + rettail + ', ' + self.body.pp_ll() + ')'
         
 class SeStr:
     def __init__(self, s):
@@ -423,7 +447,7 @@ def delta(JA):
 
 def pp_ll(ins):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test.c'), 'w+') as wf:
-        wf.write('#include <stdio.h>\n#include <stdlib.h>\n#include "j1.h"\n int main(int argc, char* argv[])\n{\n')
+        wf.write('#include <stdio.h>\n#include <stdlib.h>\n#include "j2.h"\n int main(int argc, char* argv[])\n{\n')
         for i,instruction in enumerate(ins):
             wf.write('    ')
             des_ins = desugar(instruction)
@@ -433,12 +457,16 @@ def pp_ll(ins):
                 wf.write('JBool* ')
             elif type(des_ins) == JIf:
                 wf.write('JIf* ')
-            elif type(des_ins) == JApp:
+            elif type(des_ins) in [JApp, JFunc]:
                 wf.write('JApp* ')
+            elif type(des_ins) == JVar:
+                wf.write('JVar* ')
+            elif type(des_ins) == JDefine:
+                wf.write('JDefine* ')
             wf.write('var' + str(i) + ' = ')
             wf.write(des_ins.pp_ll())
             wf.write(';\n')
-            wf.write('    pp_jObj(ck0(' + 'var' + str(i) + '));\n')
+            wf.write('    pp_jObj(' + 'var' + str(i) + ');\n')
             wf.write('    printf("\\n");\n')
         wf.write('}')
         
@@ -475,5 +503,6 @@ test_values = [
     SDef('COUNTDOWNTWO', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWNONE', SeCons(SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeEmp())))),
     SFunc('COUNTDOWNONE', SeCons(SeNum(5), SeEmp()))
 ]
-for index, value in enumerate(test_values):
-    print(desugar(value).pp(), desugar(value).interp().pp())
+pp_ll(test_values);
+# for index, value in enumerate(test_values):
+    # print(desugar(value).pp(), desugar(value).interp().pp())

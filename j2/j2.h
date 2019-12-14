@@ -6,7 +6,12 @@ typedef enum {JNUMBER, JBOOL, JPRIM, JAPP, JIF, JCONS, JVAR, JFUNC, JDEF, KRET, 
 //acts as a sort of interface
 typedef struct {JTag t;} JObj;
 void pp_jObj(JObj* jO);
-JObj* sub_jObj(JObj* jO_s, JVar* jV, JObj* jO);
+JObj* sub_jObj(JObj* jO_s, struct JVar* jV, JObj* jO);
+
+typedef struct JVar { JObj o; char* name; } JVar;
+JVar* jVar(char* name);
+void pp_jVar(JVar* jV);
+JObj* sub_jVar(JVar* jV_s, JVar* jV, JObj* jO);
 
 // e::= v ::= number
 typedef struct {JObj o; int n;} JNumber;
@@ -44,11 +49,6 @@ typedef struct JCons { JObj o; JObj* l; struct JCons* r; } JCons;
 JCons* jCons(JObj* l, JCons* r);
 void pp_jCons(JCons* jC);
 JCons* sub_jCons(JCons* jC, JVar* jV, JObj* jO);
-
-typedef struct JVar { JObj o; char* name; } JVar;
-JVar* jVar(char* name);
-void pp_jVar(JVar* jV);
-JObj* sub_jVar(JVar* jV_s, JVar* jV, JObj* jO);
 
 
 typedef struct JFunc { JObj o; char* name;} JFunc;

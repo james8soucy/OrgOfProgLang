@@ -208,7 +208,7 @@ void pp_jCons(JCons* jC)
 }
 JCons* sub_jCons(JCons* jC, JVar* jV, JObj* jO)
 {
-	return jCons(sub_jObj(jC->l, jV, jO), sub_JCons(jC->r, jV, jO));
+	return jCons(sub_jObj(jC->l, jV, jO), sub_jCons(jC->r, jV, jO));
 }
 JVar* jVar(char* name)
 {
