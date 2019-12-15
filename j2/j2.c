@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "j2.h"
 
 JCons* sigma_table;
@@ -58,8 +59,7 @@ JObj* sub_jObj(JObj* jO_s, JVar* jV, JObj* jO)
 {
 	if (jO_s == NULL)
 	{
-		printf("NULL");
-		return;
+		return NULL;
 	}
 	switch (jO_s->t)
 	{
@@ -210,7 +210,7 @@ void pp_jCons(JCons* jC)
 }
 JCons* sub_jCons(JCons* jC, JVar* jV, JObj* jO)
 {
-	return jCons(sub_jObj(jC->l, jV, jO), sub_jCons(jC->r, jV, jO));
+	return jCons(sub_jObj(jC->l, jV, jO), sub_jObj(jC->r, jV, jO));
 }
 JVar* jVar(char* name)
 {
@@ -226,7 +226,7 @@ void pp_jVar(JVar* jV)
 }
 JObj* sub_jVar(JVar* jV_s, JVar* jV, JObj* jO)
 {
-	if (jV_s->name == jV->name)
+	if (strcmp(jV_s->name, jV->name) == 0)
 	{
 		return jO;
 	}
@@ -335,10 +335,10 @@ JObj* ck1(JObj* o)
 	JObj* k = (JObj*)kRet();
 	while (1 == 1)
 	{
-		pp_jObj(o);
-		printf(", ");
-		pp_jObj(k);
-		printf("\n\n");
+		//pp_jObj(o);
+		//printf(", ");
+		//pp_jObj(k);
+		//printf("\n\n");
 		switch (o->t)
 		{
 		case JNUMBER:
@@ -437,18 +437,18 @@ JObj* ck1(JObj* o)
 		{
 			if (sigma_table == NULL)
 			{
-				sigma_table = jCons(jCons(((JDefine*)o)->func, jCons(((JDefine*)o)->args, jCons(((JDefine*)o)->body, NULL))), NULL);
+				sigma_table = jCons(o, NULL);
 			}
 			else
 			{
 				JCons* temp = sigma_table;
-				while (temp != NULL)
+				while (temp->r != NULL)
 				{
 					temp = temp->r;
 				}
-				temp = jCons(jCons(((JDefine*)o)->func, jCons(((JDefine*)o)->args, jCons(((JDefine*)o)->body, NULL))), NULL);
-				return jBool(1);
+				temp->r = jCons(o, NULL);
 			}
+			return jBool(1);
 			break;
 		}
 		default:
@@ -569,15 +569,31 @@ JObj* sigma(JFunc* func, JCons* args)
 {
 	JCons* temp = sigma_table;
 
-	pp_jObj(temp);
-
-	while (temp != NULL && ((JFunc*)((JCons*)temp->l)->l)->name != func->name)
+	while (temp != NULL && !(strcmp(((JFunc*)((JDefine*)temp->l)->func)->name, func->name) == 0))
 	{
 		temp = temp->r;
 	}
-
-	JObj* body = (JObj*)((JCons*)temp->l)->r->r->l;
-	JCons* temp_vars = ((JCons*)temp->l)->r->l;
+	
+	JObj* body = NULL;
+	switch (((JDefine*)temp->l)->body->t)
+	{
+		case JNUMBER:
+			body = jNumber(((JNumber*)((JDefine*)temp->l)->body)->n);
+			break;
+		case JBOOL:
+			body = jBool(((JBool*)((JDefine*)temp->l)->body)->b);
+			break;
+		case JAPP:
+			body = jApp(((JApp*)((JDefine*)temp->l)->body)->func, ((JApp*)((JDefine*)temp->l)->body)->args);
+			break;
+		case JIF:
+			body = jIf(((JIf*)((JDefine*)temp->l)->body)->cond, ((JIf*)((JDefine*)temp->l)->body)->tn, ((JIf*)((JDefine*)temp->l)->body)->fn);
+			break;
+		default:
+			printf("function body case error\n");
+			exit(1);
+	}
+	JCons* temp_vars = ((JDefine*)temp->l)->args;
 	JCons* temp_args = args;
 	while (temp_vars != NULL)
 	{

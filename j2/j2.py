@@ -466,6 +466,10 @@ def pp_ll(ins):
             wf.write('var' + str(i) + ' = ')
             wf.write(des_ins.pp_ll())
             wf.write(';\n')
+            wf.write('    pp_jObj(' + 'var' + str(i) + ');\n')
+            wf.write('    printf("\\n");\n')
+            
+    
             wf.write('    pp_jObj(ck1(' + 'var' + str(i) + '));\n')
             wf.write('    printf("\\n");\n')
         wf.write('}')
