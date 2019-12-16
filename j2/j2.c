@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -114,11 +115,11 @@ void pp_jBool(JBool* jB)
 	{
 		printf("JBool(true)");
 	}
-	else 
+	else
 	{
 		printf("JBool(false)");
 	}
-	
+
 }
 JBool* sub_jBool(JBool* jB, JVar* jV, JObj* jO)
 {
@@ -403,17 +404,6 @@ JObj* cek0(JObj* o)
 				{
 					o = (JObj*)sigma(((KApp*)k)->p, ((KApp*)k)->vargs, env);
 					env = set_env(((KApp*)k)->p, ((KApp*)k)->vargs, NULL);
-
-					if (((KApp*)k)->env != NULL)
-					{
-						JCons* temp_env = ((KApp*)k)->env;
-						while (temp_env->r != NULL)
-						{
-							temp_env = temp_env->r;
-						}
-						temp_env->r = env;
-						env = temp_env;
-					}
 					k = ((KApp*)k)->k;
 				}
 				else
@@ -573,7 +563,7 @@ JObj* delta(JPrim* func, JCons* args)
 			exit(1);
 			break;
 		}
-		
+
 	}
 	case '<':
 	{
@@ -615,25 +605,25 @@ JObj* sigma(JFunc* func, JCons* args, JCons* env)
 	{
 		temp = temp->r;
 	}
-	
+
 	JObj* body = NULL;
 	switch (((JDefine*)temp->l)->body->t)
 	{
-		case JNUMBER:
-			body = jNumber(((JNumber*)((JDefine*)temp->l)->body)->n);
-			break;
-		case JBOOL:
-			body = jBool(((JBool*)((JDefine*)temp->l)->body)->b);
-			break;
-		case JAPP:
-			body = jApp(((JApp*)((JDefine*)temp->l)->body)->func, ((JApp*)((JDefine*)temp->l)->body)->args);
-			break;
-		case JIF:
-			body = jIf(((JIf*)((JDefine*)temp->l)->body)->cond, ((JIf*)((JDefine*)temp->l)->body)->tn, ((JIf*)((JDefine*)temp->l)->body)->fn);
-			break;
-		default:
-			printf("function body case error\n");
-			exit(1);
+	case JNUMBER:
+		body = jNumber(((JNumber*)((JDefine*)temp->l)->body)->n);
+		break;
+	case JBOOL:
+		body = jBool(((JBool*)((JDefine*)temp->l)->body)->b);
+		break;
+	case JAPP:
+		body = jApp(((JApp*)((JDefine*)temp->l)->body)->func, ((JApp*)((JDefine*)temp->l)->body)->args);
+		break;
+	case JIF:
+		body = jIf(((JIf*)((JDefine*)temp->l)->body)->cond, ((JIf*)((JDefine*)temp->l)->body)->tn, ((JIf*)((JDefine*)temp->l)->body)->fn);
+		break;
+	default:
+		printf("function body case error\n");
+		exit(1);
 	}
 	JCons* temp_vars = ((JDefine*)temp->l)->args;
 	JCons* temp_args = args;
@@ -668,12 +658,12 @@ JCons* set_env(JFunc* func, JCons* args, JCons* env)
 	JCons* temp_vars = ((JDefine*)temp->l)->args;
 	JCons* temp_args = args;
 	JCons* temp_env = env;
-	
+
 	if (env == NULL)
 	{
 		env = jCons(NULL, NULL);
 	}
-	temp_env = env;	
+	temp_env = env;
 	while (temp_env->r != NULL)
 	{
 		temp_env = temp_env->r;
@@ -692,6 +682,8 @@ JCons* set_env(JFunc* func, JCons* args, JCons* env)
 		temp_vars = temp_vars->r;
 		temp_args = temp_args->r;
 	}
+
+	//pp_jObj(env);
 
 	return env;
 }
