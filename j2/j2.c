@@ -274,12 +274,13 @@ void pp_kRet(KRet* kR)
 {
 	printf("KRet()");
 }
-KIf* kIf(JObj* tn, JObj* fn, JObj* k)
+KIf* kIf(JObj* tn, JObj* fn, JCons* env, JObj* k)
 {
 	KIf* item = (KIf*)malloc(sizeof(KIf));
 	item->o.t = KIF;
 	item->f = fn;
 	item->t = tn;
+	item->env = env;
 	item->k = k;
 	return item;
 
@@ -291,16 +292,19 @@ void pp_kIf(KIf* kI)
 	printf(", ");
 	pp_jObj(kI->f);
 	printf(", ");
+	pp_jObj(kI->env);
+	printf(", ");
 	pp_jObj(kI->k);
 	printf(")");
 }
-KApp* kApp(JObj* p, JObj* vargs, JObj* args, JObj* k)
+KApp* kApp(JObj* p, JObj* vargs, JObj* args, JCons* env, JObj* k)
 {
 	KApp* item = (KApp*)malloc(sizeof(KApp));
 	item->o.t = KAPP;
 	item->p = p;
 	item->vargs = vargs;
 	item->args = args;
+	item->env = env;
 	item->k = k;
 	return item;
 }
@@ -312,6 +316,8 @@ void pp_kApp(KApp* kA)
 	pp_jObj(kA->vargs);
 	printf(", ");
 	pp_jObj(kA->args);
+	printf(", ");
+	pp_jObj(kA->env);
 	printf(", ");
 	pp_jObj((kA->k));
 	printf(")");
@@ -330,17 +336,37 @@ char is_true(JObj* o)
 	}
 }
 
-JObj* ck1(JObj* o)
+JObj* cek0(JObj* o)
 {
 	JObj* k = (JObj*)kRet();
+	JCons* env = NULL;
 	while (1 == 1)
 	{
+		//printf("o: ");
 		//pp_jObj(o);
-		//printf(", ");
+		//printf(", \n");
+		//printf("env: ");
+		//pp_jObj(env);
+		//printf(", \n");
+		//printf("k: ");
 		//pp_jObj(k);
 		//printf("\n\n");
 		switch (o->t)
 		{
+		case JVAR:
+		{
+			JCons* temp_env = env;
+			while (temp_env != NULL && strcmp(((JVar*)((JCons*)((JCons*)temp_env->l)->l))->name, ((JVar*)o)->name) != 0)
+			{
+				temp_env = temp_env->r;
+			}
+			//pp_jObj(o);
+			//pp_jObj(((JVar*)((JCons*)((JCons*)temp_env->l)->l)));
+			//pp_jObj(((JObj*)((JCons*)((JCons*)((JCons*)temp_env->l)->r)->l)));
+			o = sub_jVar(o, ((JVar*)((JCons*)((JCons*)temp_env->l)->l)), ((JObj*)((JCons*)((JCons*)((JCons*)temp_env->l)->r)->l)));
+			env = NULL;
+			break;
+		}
 		case JNUMBER:
 		{
 			switch (k->t)
@@ -373,12 +399,14 @@ JObj* ck1(JObj* o)
 				}
 				else if (((KApp*)k)->args == NULL && ((KApp*)k)->p->t == JFUNC)
 				{
-					o = (JObj*)sigma(((KApp*)k)->p, ((KApp*)k)->vargs);
+					o = (JObj*)sigma(((KApp*)k)->p, ((KApp*)k)->vargs, env);
+					env = set_env(((KApp*)k)->p, ((KApp*)k)->vargs, NULL);
 					k = ((KApp*)k)->k;
 				}
 				else
 				{
 					o = ((JCons*)((KApp*)k)->args)->l;
+					env = ((KApp*)k)->env;
 				}
 				break;
 			}
@@ -408,6 +436,7 @@ JObj* ck1(JObj* o)
 				{
 					o = temp->f;
 				}
+				env = temp->env;
 				k = temp->k;
 				break;
 			}
@@ -422,13 +451,13 @@ JObj* ck1(JObj* o)
 		{
 			JIf* temp = (JIf*)o;
 			o = temp->cond;
-			k = kIf(temp->tn, temp->fn, k);
+			k = kIf(temp->tn, temp->fn, env, k);
 			break;
 		}
 		case JAPP:
 		{
 			JApp* temp = (JApp*)o;
-			KApp* kA = kApp(temp->func, NULL, temp->args, k);
+			KApp* kA = kApp(temp->func, NULL, temp->args, env, k);
 			k = kA;
 			o = ((JCons*)temp->args)->l;
 			break;
@@ -565,7 +594,7 @@ JObj* delta(JPrim* func, JCons* args)
 		break;
 	}
 }
-JObj* sigma(JFunc* func, JCons* args)
+JObj* sigma(JFunc* func, JCons* args, JCons* env)
 {
 	JCons* temp = sigma_table;
 
@@ -595,11 +624,63 @@ JObj* sigma(JFunc* func, JCons* args)
 	}
 	JCons* temp_vars = ((JDefine*)temp->l)->args;
 	JCons* temp_args = args;
+	JCons* temp_env = env;
+	while (temp_env != NULL && temp_env->r != NULL)
+	{
+		temp_env = temp_env->r;
+	}
 	while (temp_vars != NULL)
 	{
-		body = sub_jObj(body, temp_vars->l, temp_args->l);
+		if (temp_env != NULL)
+		{
+			temp_env->r = jCons(jCons(temp_vars->l, jCons(temp_args->l, NULL)), NULL);
+		}
+		else
+		{
+			temp_env = jCons(jCons(temp_vars->l, jCons(temp_args->l, NULL)), NULL);
+		}
+		temp_vars = temp_vars->r;
+	}
+	return body;
+}
+JCons* set_env(JFunc* func, JCons* args, JCons* env)
+{
+	JCons* temp = sigma_table;
+
+	while (temp != NULL && !(strcmp(((JFunc*)((JDefine*)temp->l)->func)->name, func->name) == 0))
+	{
+		temp = temp->r;
+	}
+
+	JCons* temp_vars = ((JDefine*)temp->l)->args;
+	JCons* temp_args = args;
+	JCons* temp_env = env;
+	
+	if (env == NULL)
+	{
+		env = jCons(NULL, NULL);
+	}
+	temp_env = env;	
+	while (temp_env->r != NULL)
+	{
+		temp_env = temp_env->r;
+	}
+	while (temp_vars != NULL)
+	{
+		if (temp_env->l != NULL)
+		{
+			temp_env->r = jCons(jCons(temp_vars->l, jCons(temp_args->l, NULL)), NULL);
+			temp_env = temp_env->r;
+		}
+		else
+		{
+			temp_env->l = jCons(temp_vars->l, jCons(temp_args->l, NULL));
+		}
 		temp_vars = temp_vars->r;
 		temp_args = temp_args->r;
 	}
-	return body;
+
+	//pp_jObj(env);
+
+	return env;
 }

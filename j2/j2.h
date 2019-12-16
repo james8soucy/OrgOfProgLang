@@ -65,18 +65,20 @@ typedef struct { JObj o;} KRet;
 KRet* kRet();
 void pp_kRet(KRet* kR);
 
-typedef struct { JObj o; JObj* t; JObj* f; JObj* k; } KIf;
-KIf* kIf(JObj* tn, JObj* fn, JObj* k);
+typedef struct { JObj o; JObj* t; JObj* f; JCons* env; JObj* k; } KIf;
+KIf* kIf(JObj* tn, JObj* fn, JCons* env, JObj* k);
 void pp_kIf(KIf* kI);
 
-typedef struct { JObj o; JObj* p; JObj* vargs; JObj* args; JObj* k; } KApp;
-KApp* kApp(JObj* p, JObj* vargs, JObj* args, JObj* k);
+typedef struct { JObj o; JObj* p; JObj* vargs; JObj* args; JCons* env; JObj* k; } KApp;
+KApp* kApp(JObj* p, JObj* vargs, JObj* args, JCons* env, JObj* k);
 void pp_kApp(KApp* kA);
 
-JObj* ck0(JObj* o);
+JObj* cek0(JObj* o);
 
 char is_true(JObj* o);
 
 JObj* delta(JPrim* func, JCons* args);
 
-JObj* sigma(JFunc* func, JCons* args);
+JObj* sigma(JFunc* func, JCons* args, JCons* env);
+
+JCons* set_env(JFunc* func, JCons* args, JCons* env);
