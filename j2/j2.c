@@ -360,9 +360,11 @@ JObj* cek0(JObj* o)
 			{
 				temp_env = temp_env->r;
 			}
-			//pp_jObj(o);
-			//pp_jObj(((JVar*)((JCons*)((JCons*)temp_env->l)->l)));
-			//pp_jObj(((JObj*)((JCons*)((JCons*)((JCons*)temp_env->l)->r)->l)));
+			if (temp_env == NULL)
+			{
+				printf("ERROR: VARIABLE UNBOUND\n");
+				exit(1);
+			}
 			o = sub_jVar(o, ((JVar*)((JCons*)((JCons*)temp_env->l)->l)), ((JObj*)((JCons*)((JCons*)((JCons*)temp_env->l)->r)->l)));
 			env = NULL;
 			break;

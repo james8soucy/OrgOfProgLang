@@ -345,7 +345,6 @@ def desugar(sexpr):
     # e = (*)
     if (isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == '*' and isinstance(sexpr.r, SeEmp)):
         return JNumber(1)
-    print(sexpr)
     return 'case error'
 
 def SApp(op, l, r):
@@ -472,6 +471,8 @@ def pp_ll(ins):
     
             wf.write('    pp_jObj(cek0(' + 'var' + str(i) + '));\n')
             wf.write('    printf("\\n");\n')
+            
+            
         wf.write('}')
         
 expected = [54, 24, 9, 10, 5, 0, 8, 12, 3, 3, 2, False, False, False, True, False, 4, 5, 3, 4]
@@ -505,8 +506,11 @@ test_values = [
     SFunc('COUNTDOWN', SeCons(SeNum(3), SeEmp())),
     SDef('COUNTDOWNONE', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWNTWO', SeCons(SApp(SeStr('-'), SeVar('x'), SeNum(2)), SeEmp())))),
     SDef('COUNTDOWNTWO', SeCons(SeVar('x'), SeEmp()), SIf(SApp(SeStr('=='), SeVar('x'), SeNum(0)), SeNum(99), SFunc('COUNTDOWNONE', SeCons(SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeEmp())))),
-    SFunc('COUNTDOWNONE', SeCons(SeNum(5), SeEmp()))
+    SFunc('COUNTDOWNONE', SeCons(SeNum(5), SeEmp())),
+    SDef('DYNAMICONE', SeCons(SeVar('x'), SeCons(SeVar('y'), SeEmp())), SFunc('DYNAMICTWO', SeCons(SeVar('x'), SeEmp()))),
+    SDef('DYNAMICTWO', SeCons(SeVar('z'), SeEmp()), SApp(SeStr('+'), SeVar('z'), SeVar('y'))),
+    SFunc('DYNAMICONE', SeCons(SeNum(5), SeCons(SeNum(4), SeEmp())))
 ]
 pp_ll(test_values);
 # for index, value in enumerate(test_values):
-    # print(desugar(value).pp(), desugar(value).interp().pp())
+    # print(desugar(value).pp()), desugar(value).interp().pp())
