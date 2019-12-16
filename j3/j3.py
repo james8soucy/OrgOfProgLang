@@ -300,11 +300,8 @@ def SApp(op, l, r):
 def SIf(cond, tn, fn):
     return SeCons(SeStr('if'), SeCons(cond, SeCons(tn, SeCons(fn, SeEmp()))))
     
-def SDef(func, args, body):
-    return SeCons(SeStr('DEFINE'), SeCons(SeStr(func), SeCons(args, SeCons(body, SeEmp()))))
-
-def SFunc(func, args):
-    return SeCons(SeStr(func), SeCons(args, SeEmp()))
+def SLamb(args, body, vals):
+    return SeCons(SeCons(SeStr('let'), SeCons(args, SeCons(body, SeEmp()))), vals)
 
     
 def find_redex(jexpr):
@@ -412,6 +409,8 @@ test_values = [
     SIf(SeStr(False), SeNum(4), SeNum(5)),
     SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
     SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3)),
+    SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeNum(3), SeEmp())),
+    SLamb(SeCons(SeVar('x'), SeCons(SeVar('y'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeVar('y')), SeCons(SeNum(2), SeCons(SeNum(3), SeEmp())))
 ]
 pp_ll(test_values);
 # for index, value in enumerate(test_values):

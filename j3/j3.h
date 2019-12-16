@@ -50,7 +50,7 @@ JCons* jCons(JObj* l, JCons* r);
 void pp_jCons(JCons* jC);
 JCons* sub_jCons(JCons* jC, JVar* jV, JObj* jO);
 
-typedef struct JLamb { JObj o; JCons* args; JObj* body; } JLamb;
+typedef struct JLamb { JCons* args; JObj* body; } JLamb;
 JLamb* jLamb(JCons* args, JObj* body);
 void pp_jLamb(JLamb* jL);
 
