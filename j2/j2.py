@@ -10,8 +10,6 @@ class JNumber:
         return str(self.n)
     def pp_ll(self):
         return 'jNumber(' + str(self.n) + ')'
-    def interp(self):
-        return self
     def sub(self, var, arg):
         return self
 class JEmp:
@@ -21,8 +19,6 @@ class JEmp:
         return "{}"
     def pp_ll(self):
         return 'NULL'
-    def interp(self):
-        return self
 class JIf:
     def __init__(self, cond, tn, fn):
         self.cond = cond
@@ -32,12 +28,6 @@ class JIf:
         return "(if " + self.cond.pp() + ", " + self.tn.pp() + ", " + self.fn.pp() + ")"
     def pp_ll(self):
         return 'jIf(' + self.cond.pp_ll() + ', ' + self.tn.pp_ll() + ', ' + self.fn.pp_ll() + ')'
-    def interp(self):
-        _cond = self.cond.interp()
-        if (_cond.b):
-            return self.tn.interp()
-        else:
-            return self.fn.interp()
     def sub(self, var, arg):
         return JIf(self.cond.sub(var, arg), self.tn.sub(var, arg), self.fn.sub(var, arg))
 class JBool:
@@ -47,8 +37,6 @@ class JBool:
         return str(self.b)
     def pp_ll(self):
         return 'jBool(' + str(int(self.b)) + ')' 
-    def interp(self):
-        return self
     def sub(self, var, arg):
         return self
 class JPrim:
@@ -61,8 +49,6 @@ class JPrim:
             return 'jPrim(' + '"' + self.p + ' ")'
         else:
             return 'jPrim(' + '"' + self.p + '")'
-    def interp(self):
-        return self
     def sub(self, var, arg):
         return self
 class JApp:
@@ -86,8 +72,6 @@ class JApp:
                 retstr = retstr + 'jCons(' + arg.pp_ll() + ', ' + JEmp().pp_ll()
                 rettail = rettail + ')'
         return retstr + rettail 
-    def interp(self):
-        return delta(self)
     def sub(self, var, arg):
         return JApp(self.func, [argument.sub(var, arg) for argument in self.args])
 class JVar:
@@ -98,8 +82,6 @@ class JVar:
     def sub(self, var, arg):
         if (var.name == self.name):
             return arg
-        return self
-    def interp(self):
         return self
     def pp_ll(self):
         return 'jVar("' + self.name + '")'
@@ -113,15 +95,6 @@ class JFunc:
             retstr = retstr + arg.pp()
         retstr = retstr + '])'
         return retstr
-    def interp(self):
-        if self.name in sigma_table.keys():
-            if len(self.args) == len(sigma_table[self.name]['args']):
-                result = sigma_table[self.name]['body']
-                for i, arg in enumerate(sigma_table[self.name]['args']):
-                    result = result.sub(arg, self.args[i])
-                return result.interp()
-            return 'argument error: ' + self.name + ' requires ' + len(sigma_table[self.name]['args']) + ' arguments, ' + len(self.args) + ' given'    
-        return 'error - function not defined'
     def sub(self, var, arg):
         return JFunc(self.name, [argument.sub(var, arg) for argument in self.args])
     def pp_ll(self):
@@ -146,9 +119,6 @@ class JDefine:
             retstr = retstr + arg.pp()
         retstr = retstr + '], ' + self.body.pp() + ')'
         return retstr
-    def interp(self):
-        sigma_table[self.func] = {'args':self.args, 'body':self.body}
-        return JEmp()
     def pp_ll(self):
         retstr = 'jDefine(jFunc("' + self.func + '"), '
         rettail = ''
@@ -413,37 +383,6 @@ def step(jexpr):
     if isinstance(jexpr, JIf):
         return JIf(step(jexpr.cond), jexpr.tn, jexpr.fn)
 
-def delta(JA):
-    _func = JA.func.interp().p
-    if (_func == '+'):
-        sum = 0
-        for arg in JA.args:
-            sum = sum + arg.interp().n
-        return JNumber(sum)
-    if (_func == '*'):
-        prd = 1
-        for arg in JA.args:
-            prd = prd * arg.interp().n
-        return JNumber(prd)
-    if (_func == '-'):
-        if(len(JA.args) == 1):
-            return JNumber(-1 * JA.args[1].interp().n)
-        return JNumber(JA.args[0].interp().n - JA.args[1].interp().n)
-    if (_func == '/'):
-        return JNumber(JA.args[0].interp().n / JA.args[1].interp().n)
-    if (_func == '<'):
-        return JBool(JA.args[0].interp().n < JA.args[1].interp().n)
-    if (_func == '>'):
-        return JBool(JA.args[0].interp().n > JA.args[1].interp().n)
-    if (_func == '=='):
-        return JBool(JA.args[0].interp().n == JA.args[1].interp().n)
-    if (_func == '<='):
-        return JBool(JA.args[0].interp().n <= JA.args[1].interp().n)
-    if (_func == '>='):
-        return JBool(JA.args[0].interp().n >= JA.args[1].interp().n)
-    if (_func == '!='):
-        return JBool(JA.args[0].interp().n != JA.args[1].interp().n)
-
 def pp_ll(ins):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test.c'), 'w+') as wf:
         wf.write('#include <stdio.h>\n#include <stdlib.h>\n#include "j2.h"\n int main(int argc, char* argv[])\n{\n')
@@ -513,4 +452,4 @@ test_values = [
 ]
 pp_ll(test_values);
 # for index, value in enumerate(test_values):
-    # print(desugar(value).pp()), desugar(value).interp().pp())
+    # print(desugar(value).pp()))
