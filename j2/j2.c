@@ -403,6 +403,17 @@ JObj* cek0(JObj* o)
 				{
 					o = (JObj*)sigma(((KApp*)k)->p, ((KApp*)k)->vargs, env);
 					env = set_env(((KApp*)k)->p, ((KApp*)k)->vargs, NULL);
+
+					if (((KApp*)k)->env != NULL)
+					{
+						JCons* temp_env = ((KApp*)k)->env;
+						while (temp_env->r != NULL)
+						{
+							temp_env = temp_env->r;
+						}
+						temp_env->r = env;
+						env = temp_env;
+					}
 					k = ((KApp*)k)->k;
 				}
 				else
@@ -681,8 +692,6 @@ JCons* set_env(JFunc* func, JCons* args, JCons* env)
 		temp_vars = temp_vars->r;
 		temp_args = temp_args->r;
 	}
-
-	//pp_jObj(env);
 
 	return env;
 }
