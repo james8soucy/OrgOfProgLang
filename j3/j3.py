@@ -71,7 +71,7 @@ class JApp:
             else:
                 retstr = retstr + 'jCons(' + arg.pp_ll() + ', ' + JEmp().pp_ll()
                 rettail = rettail + ')'
-        return retstr + rettail 
+        return retstr + rettail
     def sub(self, var, arg):
         return JApp(self.func, [argument.sub(var, arg) for argument in self.args])
 class JVar:
@@ -247,6 +247,9 @@ def desugar(sexpr):
     # e = x
     if isinstance(sexpr, SeVar):
         return JVar(sexpr.name)
+    # v = (let x e) e
+    if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeCons) and isinstance(sexpr.l.l, SeStr) and sexpr.l.l.s == 'let':
+        return JApp(JLamb(desugar(sexpr.l.r.l), desugar(sexpr.l.r.r.l)), desugar(sexpr.r))
     # e = (x ...)
     if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeVar):
         args = [JVar(sexpr.l.name)]
@@ -408,6 +411,6 @@ test_values = [
     SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeNum(2), SeEmp()))), SeCons(SeVar('x'), SeEmp())),
     SLamb(SeCons(SeVar('x'), SeCons(SeVar('y'), SeEmp())), SApp(SeStr('+'), SeVar('x'), SeVar('y')), SeCons(SeNum(2), SeCons(SeNum(3), SeEmp())))
 ]
-# pp_ll(test_values);
-for index, value in enumerate(test_values):
-    print(desugar(value).pp())
+pp_ll(test_values);
+# for index, value in enumerate(test_values):
+    # print(desugar(value).pp())
