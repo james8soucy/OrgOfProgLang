@@ -409,7 +409,8 @@ test_values = [
     SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeNum(3), SeEmp())),
     SLamb(SeCons(SeVar('x'), SeCons(SeVar('y'), SeEmp())), SApp(SeStr('+'), SeVar('x'), SeVar('y')), SeCons(SeNum(2), SeCons(SeNum(3), SeEmp()))),
     SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(2)), SeCons(SeNum(2), SeEmp()))), SeCons(SeNum(1), SeEmp())),
-    SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeVar('x'), SeEmp()))), SeCons(SeNum(2), SeEmp()))
+    SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeNum(2), SeEmp()))), SeCons(SeNum(2), SeEmp())),
+    SLamb(SeCons(SeVar('x'), SeEmp()), SLamb(SeCons(SeVar('y'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeVar('y')), SeCons(SeNum(2), SeEmp())), SeCons(SeNum(1), SeEmp()))
 ]
 pp_ll(test_values);
 # for index, value in enumerate(test_values):

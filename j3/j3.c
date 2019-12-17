@@ -357,10 +357,16 @@ JObj* cek1(JObj* o)
 		case JVAR:
 		{
 			JCons* temp_env = env;
-			while (temp_env != NULL && strcmp(((JVar*)((JCons*)((JCons*)temp_env->l)->l))->name, ((JVar*)o)->name) != 0)
+			JCons* temp_match = NULL;
+			while (temp_env != NULL)
 			{
+				if (strcmp(((JVar*)((JCons*)((JCons*)temp_env->l)->l))->name, ((JVar*)o)->name) == 0)
+				{
+					temp_match = temp_env;
+				}
 				temp_env = temp_env->r;
 			}
+			temp_env = temp_match;
 			if (temp_env == NULL)
 			{
 				printf("ERROR: VARIABLE UNBOUND\n");
@@ -480,7 +486,7 @@ JObj* cek1(JObj* o)
 				case JLAMB:
 				{
 					JApp* temp = (JApp*)o;
-					JClose* temp_close = jClose(temp->func, NULL, 0);
+					JClose* temp_close = jClose(temp->func, env);
 					KApp* kA = kApp(temp_close, NULL, temp->args, env, k);
 					k = kA;
 					o = ((JCons*)temp->args)->l;
