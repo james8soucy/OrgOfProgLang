@@ -36,6 +36,12 @@ void pp_jObj(JObj* jO)
 	case JVAR:
 		pp_jVar((JVar*)jO);
 		break;
+	case JLAMB:
+		pp_jLamb((JLamb*)jO);
+		break;
+	case JCLOSE:
+		pp_jClose((JClose*)jO);
+		break;
 	case KRET:
 		pp_kRet((KRet*)jO);
 		break;
@@ -59,22 +65,22 @@ JObj* sub_jObj(JObj* jO_s, JVar* jV, JObj* jO)
 	switch (jO_s->t)
 	{
 	case JNUMBER:
-		sub_jNumber((JNumber*)jO_s, jV, jO);
+		return sub_jNumber((JNumber*)jO_s, jV, jO);
 		break;
 	case JBOOL:
-		sub_jBool((JBool*)jO_s, jV, jO);
+		return sub_jBool((JBool*)jO_s, jV, jO);
 		break;
 	case JAPP:
-		sub_jApp((JApp*)jO_s, jV, jO);
+		return sub_jApp((JApp*)jO_s, jV, jO);
 		break;
 	case JIF:
-		sub_jIf((JIf*)jO_s, jV, jO);
+		return sub_jIf((JIf*)jO_s, jV, jO);
 		break;
 	case JCONS:
-		sub_jCons((JCons*)jO_s, jV, jO);
+		return sub_jCons((JCons*)jO_s, jV, jO);
 		break;
 	case JVAR:
-		sub_jVar((JVar*)jO_s, jV, jO);
+		return sub_jVar((JVar*)jO_s, jV, jO);
 		break;
 	default:
 		printf("tag not found");
@@ -243,6 +249,22 @@ void pp_jLamb(JLamb* jL)
 	pp_jObj(jL->body);
 	printf(")");
 }
+JClose* jClose(JLamb* func, JCons* env)
+{
+	JClose* item = (JClose*)malloc(sizeof(JClose));
+	item->o.t = JCLOSE;
+	item->func = func;
+	item->env = env;
+	return item;
+}
+void pp_jClose(JClose* jC)
+{
+	printf("JClose(");
+	pp_jObj((jC->func));
+	printf(", ");
+	pp_jObj((jC->env));
+	printf(")");
+}
 KRet* kRet()
 {
 	KRet* item = (KRet*)malloc(sizeof(KRet));
@@ -315,7 +337,7 @@ char is_true(JObj* o)
 	}
 }
 
-JObj* cek0(JObj* o)
+JObj* cek1(JObj* o)
 {
 	JObj* k = (JObj*)kRet();
 	JCons* env = NULL;
@@ -378,10 +400,18 @@ JObj* cek0(JObj* o)
 					o = (JObj*)delta(((KApp*)k)->p, ((KApp*)k)->vargs);
 					k = ((KApp*)k)->k;
 				}
-				else if (((KApp*)k)->args == NULL && ((KApp*)k)->p->t == JFUNC)
+				else if (((KApp*)k)->args == NULL && ((KApp*)k)->p->t == JCLOSE)
 				{
-					o = (JObj*)sigma(((KApp*)k)->p, ((KApp*)k)->vargs, env);
-					env = set_env(((KApp*)k)->p, ((KApp*)k)->vargs, NULL);
+					JCons* temp = ((KApp*)k)->vargs;
+					JCons* temp_var = ((JLamb*)((JClose*)((KApp*)k)->p)->func)->args;
+					env = ((JClose*)((KApp*)k)->p)->env;
+					while (temp != NULL)
+					{
+						env = add_sub(env, jCons(temp_var->l, jCons(temp->l, NULL)));
+						temp = temp->r;
+						temp_var = temp_var->r;
+					}
+					o = ((JLamb*)((JClose*)((KApp*)k)->p)->func)->body;
 					k = ((KApp*)k)->k;
 				}
 				else
@@ -437,10 +467,30 @@ JObj* cek0(JObj* o)
 		}
 		case JAPP:
 		{
-			JApp* temp = (JApp*)o;
-			KApp* kA = kApp(temp->func, NULL, temp->args, env, k);
-			k = kA;
-			o = ((JCons*)temp->args)->l;
+			switch (((JApp*)o)->func->t)
+			{
+				case JPRIM:
+				{
+					JApp* temp = (JApp*)o;
+					KApp* kA = kApp(temp->func, NULL, temp->args, env, k);
+					k = kA;
+					o = ((JCons*)temp->args)->l;
+					break;
+				}
+				case JLAMB:
+				{
+					JApp* temp = (JApp*)o;
+					JClose* temp_close = jClose(temp->func, NULL, 0);
+					KApp* kA = kApp(temp_close, NULL, temp->args, env, k);
+					k = kA;
+					o = ((JCons*)temp->args)->l;
+					break;
+				}
+				default:
+				printf("error: application type not found\n");
+				exit(1);
+				break;
+			}
 			break;
 		}
 		default:
@@ -555,5 +605,24 @@ JObj* delta(JPrim* func, JCons* args)
 		printf("primitive not recognized");
 		exit(1);
 		break;
+	}
+}
+
+JCons* add_sub(JCons* env, JCons* sub)
+{
+	if (env == NULL)
+	{
+		env = jCons(sub, NULL);
+		return env;
+	}
+	else
+	{
+		JCons* temp = env;
+		while (temp->r != NULL)
+		{
+			temp = temp->r;
+		}
+		temp->r = jCons(sub, NULL);
+		return env;
 	}
 }

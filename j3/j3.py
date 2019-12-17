@@ -377,7 +377,7 @@ def pp_ll(ins):
             wf.write('    printf("\\n");\n')
             
     
-            wf.write('    pp_jObj(cek0(' + 'var' + str(i) + '));\n')
+            wf.write('    pp_jObj(cek1(' + 'var' + str(i) + '));\n')
             wf.write('    printf("\\n");\n')
             
             
@@ -407,9 +407,9 @@ test_values = [
     SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
     SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3)),
     SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeNum(3), SeEmp())),
+    SLamb(SeCons(SeVar('x'), SeCons(SeVar('y'), SeEmp())), SApp(SeStr('+'), SeVar('x'), SeVar('y')), SeCons(SeNum(2), SeCons(SeNum(3), SeEmp()))),
     SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(2)), SeCons(SeNum(2), SeEmp()))), SeCons(SeNum(1), SeEmp())),
-    SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeNum(2), SeEmp()))), SeCons(SeVar('x'), SeEmp())),
-    SLamb(SeCons(SeVar('x'), SeCons(SeVar('y'), SeEmp())), SApp(SeStr('+'), SeVar('x'), SeVar('y')), SeCons(SeNum(2), SeCons(SeNum(3), SeEmp())))
+    SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeVar('x'), SeEmp()))), SeCons(SeNum(2), SeEmp()))
 ]
 pp_ll(test_values);
 # for index, value in enumerate(test_values):

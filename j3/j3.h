@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef enum {JNUMBER, JBOOL, JPRIM, JAPP, JIF, JCONS, JVAR, JLAMB, KRET, KIF, KAPP} JTag;
+typedef enum {JNUMBER, JBOOL, JPRIM, JAPP, JIF, JCONS, JVAR, JLAMB, JCLOSE, KRET, KIF, KAPP} JTag;
 
 //acts as a sort of interface
 typedef struct {JTag t;} JObj;
@@ -50,9 +50,13 @@ JCons* jCons(JObj* l, JCons* r);
 void pp_jCons(JCons* jC);
 JCons* sub_jCons(JCons* jC, JVar* jV, JObj* jO);
 
-typedef struct JLamb { JCons* args; JObj* body; } JLamb;
+typedef struct JLamb { JObj o; JCons* args; JObj* body; } JLamb;
 JLamb* jLamb(JCons* args, JObj* body);
 void pp_jLamb(JLamb* jL);
+
+typedef struct JClose { JObj o; JLamb* func; JCons* env; } JClose;
+JClose* jClose(JLamb* func, JCons* env);
+void pp_jClose(JClose* jC);
 
 typedef struct { JObj o;} KRet;
 KRet* kRet();
@@ -66,8 +70,10 @@ typedef struct { JObj o; JObj* p; JObj* vargs; JObj* args; JCons* env; JObj* k; 
 KApp* kApp(JObj* p, JObj* vargs, JObj* args, JCons* env, JObj* k);
 void pp_kApp(KApp* kA);
 
-JObj* cek0(JObj* o);
+JObj* cek1(JObj* o);
 
 char is_true(JObj* o);
 
 JObj* delta(JPrim* func, JCons* args);
+
+JCons* add_sub(JCons* env, JCons* sub);
