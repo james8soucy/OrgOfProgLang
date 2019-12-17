@@ -106,7 +106,7 @@ class JLamb:
             else:
                 retstr = retstr + 'jCons(' + arg.pp_ll() + ', ' + JEmp().pp_ll()
                 rettail = rettail + ')'
-        return retstr + rettail + ", " self.body.pp_ll() + ")"
+        return retstr + rettail + ", " + self.body.pp_ll() + ")"
         
 class SeStr:
     def __init__(self, s):
@@ -253,7 +253,7 @@ def desugar(sexpr):
         while not isinstance(sexpr.r, SeEmp):
             sexpr = sexpr.r
             args.append(JVar(sexpr.l.name))
-        return args    
+        return args
     # e = (e ...)
     if isinstance(sexpr, SeCons) and not isinstance(sexpr.l, SeStr):
         args = [desugar(sexpr.l)]
@@ -274,12 +274,6 @@ def desugar(sexpr):
             tempS = tempS.r
             args.append(desugar(tempS.l))
         return JApp(JPrim(sexpr.l.s), args)
-    # d = (define (f x ...) e)
-    if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and sexpr.l.s == 'DEFINE':
-        return JDefine(sexpr.r.l.s, desugar(sexpr.r.r.l), desugar(sexpr.r.r.r.l))
-    # f = function in sigma table
-    if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and all([c.isupper() for c in sexpr.l.s]):
-        return JFunc(sexpr.l.s, desugar(sexpr.r.l))
     # e = (e e ...)
     if isinstance(sexpr, SeCons) and isinstance(sexpr.l, SeStr) and isinstance(sexpr.r, SeCons) and isinstance(sexpr.r.r, SeCons) and isinstance(sexpr.r.r.r, SeEmp):
         return JApp(JPrim(sexpr.l.s), [desugar(sexpr.r.l), desugar(sexpr.r.r.l)])
@@ -359,7 +353,7 @@ def step(jexpr):
 
 def pp_ll(ins):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test.c'), 'w+') as wf:
-        wf.write('#include <stdio.h>\n#include <stdlib.h>\n#include "j2.h"\n int main(int argc, char* argv[])\n{\n')
+        wf.write('#include <stdio.h>\n#include <stdlib.h>\n#include "j3.h"\n int main(int argc, char* argv[])\n{\n')
         for i,instruction in enumerate(ins):
             wf.write('    ')
             des_ins = desugar(instruction)
@@ -410,8 +404,10 @@ test_values = [
     SIf(SApp(SeStr('>'), SeNum(4), SeNum(5)), SeNum(9), SeNum(3)),
     SIf(SApp(SeStr('=='), SeNum(4), SeNum(4)), SApp(SeStr('*'), SeNum(2), SeNum(2)), SeNum(3)),
     SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeNum(3), SeEmp())),
-    SLamb(SeCons(SeVar('x'), SeCons(SeVar('y'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeVar('y')), SeCons(SeNum(2), SeCons(SeNum(3), SeEmp())))
+    SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(2)), SeCons(SeNum(2), SeEmp()))), SeCons(SeNum(1), SeEmp())),
+    SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SLamb(SeCons(SeVar('x'), SeEmp()), SApp(SeStr('+'), SeVar('x'), SeNum(1)), SeCons(SeNum(2), SeEmp()))), SeCons(SeVar('x'), SeEmp())),
+    SLamb(SeCons(SeVar('x'), SeCons(SeVar('y'), SeEmp())), SApp(SeStr('+'), SeVar('x'), SeVar('y')), SeCons(SeNum(2), SeCons(SeNum(3), SeEmp())))
 ]
-pp_ll(test_values);
-# for index, value in enumerate(test_values):
-    # print(desugar(value).pp()))
+# pp_ll(test_values);
+for index, value in enumerate(test_values):
+    print(desugar(value).pp())
